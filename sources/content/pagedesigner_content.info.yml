@@ -1,0 +1,9 @@
+name: Content Entity Source
+description: Content entity source plugin of Pagedesigner for the Translation Management system.
+package: pagedesigner_tmgmt
+core: 8.x
+type: module
+
+dependencies:
+  - pagedesigner_tmgmt:pagedesigner_tmgmt
+
