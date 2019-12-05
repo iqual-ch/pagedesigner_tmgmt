@@ -8,3 +8,4 @@ core: 8.x
 dependencies:
   - pagedesigner:pagedesigner
   - tmgmt:tmgmt
+  - tmgmt_deepl:tmgmt_deepl

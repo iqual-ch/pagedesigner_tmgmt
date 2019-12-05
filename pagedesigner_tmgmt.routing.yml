@@ -1,0 +1,7 @@
+pagedesigner_tmgmt.accept_translation:
+  path: '/accept/translation'
+  defaults:
+    _form: '\Drupal\pagedesigner_tmgmt\Form\AcceptForm'
+    _title: 'Accept translations'
+  requirements:
+    _role: 'authenticated'

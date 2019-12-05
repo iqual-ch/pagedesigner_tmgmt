@@ -1,0 +1,374 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\pagedesigner_content\PagedesignerItemProcessor;
+use Drupal\tmgmt\JobCheckoutManager;
+use Drupal\tmgmt\JobInterface;
+use Drupal\tmgmt\TMGMTException;
+
+/**
+ * Implements hook_field_info_alter().
+ */
+function pagedesigner_content_field_info_alter(&$info) {
+
+
+	if (isset($info['pagedesigner_item'])) {
+		$info['pagedesigner_item']['tmgmt_field_processor'] = PagedesignerItemProcessor::class;
+	}
+}
+
+/**
+ * Implements hook_tmgmt_job_before_request_translation().
+ */
+function pagedesigner_content_tmgmt_job_before_request_translation(array $job) {
+
+	$job = array_pop($job);
+	//PagedesignerItemProcessor::$sourceLanguage = $job->getJob()->getSourceLanguage();
+	//PagedesignerItemProcessor::$targetLanguage = $job->getJob()->getTargetLanguage();
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function pagedesigner_content_form_node_page_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	if ($form_state->getFormObject()->getEntity()->id()) {
+
+		$current_path = \Drupal::service('path.current')->getPath();
+		$current_path = explode('/', $current_path);
+		$target_lang = $current_path[count($current_path)-1];
+		$src_lang = $current_path[count($current_path)-2];
+
+
+		$job = tmgmt_job_create($src_lang, $target_lang, \Drupal::currentUser()->id());
+
+		try {
+			$job->addItem('content', 'node', $form_state->getFormObject()->getEntity()->id());
+		} catch (\Drupal\tmgmt\TMGMTException $e) {
+			\Drupal::messenger()->addMessage($e->getMessage(), 'warning');
+			return ;
+		}
+		$text = count_chars_recursively($job->getData());
+		$text = strip_tags($text);
+		$text = str_replace(array('`', '~', '!', '@', '"', '#', '$', ';', '%', '^', ':', '?', '&', '*', '(', ')', '-', '_', '+', '=', '{', '}', '[', ']', '\\', '|', '/', '\'', '<', '>', ',', '.'), ' ', $text);
+		// Remove duplicate spaces.
+		$text =  trim(preg_replace('/ {2,}/', ' ', $text));
+		// Turn into an array.
+		$words = ($text) ? explode(' ', $text) : array();
+		$letters = strlen(preg_replace('![^a-z]+!', '', strtolower($text)));
+		$price = $letters * 0.00002;
+		$form['deepl'] = [
+			'#title' => 'Translate with Deepl',
+			'#type' => 'checkbox',
+			'#description' => 'Words: ' . count($words) . ', Letters: ' . $letters . ', Price: ' . $price . '$',
+			'#weight' => 10,
+			'#suffix' => ''
+		];
+		$job->abortTranslation();
+		$form['actions']['submit']['#submit'][] = 'pagedesigner_content_form_node_page_form_submit';
+	}
+}
+
+function count_chars_recursively($data) {
+	if (is_array($data)) {
+		if (isset($data['#translate']) && $data['#translate']) {
+			return $data['#text'];
+		}
+		$result = "";
+		foreach ($data as $key => $value) {
+			$result .= count_chars_recursively($value);
+		}
+		return $result;
+	}
+	return "";
+}
+
+/**
+ * Submit handler function for the domain form to create a theme copy.
+ */
+function pagedesigner_content_form_node_page_form_submit(&$form, FormStateInterface $form_state)
+{
+	$current_path = \Drupal::service('path.current')->getPath();
+	$current_path = explode('/', $current_path);
+	$target_lang = $current_path[count($current_path)-1];
+	$src_lang = $current_path[count($current_path)-2];
+	if ($form['deepl']['#value']) {
+		$job = tmgmt_job_create($src_lang, $target_lang, \Drupal::currentUser()->id());
+		$job->addItem('content', 'node', $form_state->getFormObject()->getEntity()->id());
+		$job->translator = 'deepl_pro';
+		$menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+		$result = $menu_link_manager->loadLinksByRoute('entity.node.canonical', ['node' => $form_state->getFormObject()->getEntity()->id()]);
+		$menu_link = reset($result);
+		$menu_link_entity = \Drupal::entityTypeManager()->getStorage('menu_link_content')->load($menu_link->getMetaData()['entity_id']);
+		if ($menu_link_entity)
+			$job->addItem('content',  $menu_link_entity->getEntityTypeId(), $menu_link_entity->id());
+		$job->save();
+
+		$batch = [
+			'title' => t('Translating'),
+			'operations' => [
+				['pagedesigner_content_process_translation',[$job]],
+			],
+			'finished' => 'pagedesigner_content_finished_translation'
+			//'file' => 'path_to_file_containing_myfunctions',
+		];
+		batch_set($batch);
+	}
+}
+function pagedesigner_content_process_translation($job) {
+	$job->requestTranslation();
+	$job->acceptTranslation();
+	$job->save();
+}
+
+function pagedesigner_content_finished_translation() {
+	\Drupal::messenger()->addStatus('Copied pagedesigner item.');
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function pagedesigner_content_form_tmgmt_job_edit_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	$job = $form_state->getFormObject()->getEntity();
+
+	$job_item = @array_pop($job->getItems());
+	$text = count_chars_recursively($job->getData());
+	$text = strip_tags($text);
+	$text = str_replace(array('`', '~', '!', '@', '"', '#', '$', ';', '%', '^', ':', '?', '&', '*', '(', ')', '-', '_', '+', '=', '{', '}', '[', ']', '\\', '|', '/', '\'', '<', '>', ',', '.'), ' ', $text);
+	// Remove duplicate spaces.
+	$text =  trim(preg_replace('/ {2,}/', ' ', $text));
+	// Turn into an array.
+	$words = ($text) ? explode(' ', $text) : array();
+	$letters = strlen(preg_replace('![^a-z]+!', '', strtolower($text)));
+	$price = $letters * 0.00002;
+
+	$form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#header']['letters'] = t('Letters');
+	$form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#header']['price'] = t('Price');
+	$form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#options']['letters'] = $letters;
+	$form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#options']['price'] = $price;
+	$form['info']['letter_count'] = array(
+		'#type' => 'item',
+		'#title' => t('Total letters'),
+		'#markup' => number_format($letters),
+		'#prefix' => '<div class="tmgmt-ui-word-count tmgmt-ui-info-item">',
+		'#suffix' => '</div>',
+	);
+	$form['info']['price_count'] = array(
+		'#type' => 'item',
+		'#title' => t('Total price'),
+		'#markup' => $price . '$',
+		'#prefix' => '<div class="tmgmt-ui-word-count tmgmt-ui-info-item">',
+		'#suffix' => '</div>',
+	);
+	//die();
+}
+
+function ajaxCalculatePrice(array &$form, FormStateInterface $form_state) {
+	$entity = $form_state->get('entity');
+	$values = $form_state->getValues();
+	foreach (array_keys(array_filter($values['languages'])) as $langcode) {
+		$job = tmgmt_job_create($entity->language()->getId(), $langcode, \Drupal::currentUser()->id());
+		$text = count_chars_recursively($job->getData());
+		$text = strip_tags($text);
+		$text = str_replace(array('`', '~', '!', '@', '"', '#', '$', ';', '%', '^', ':', '?', '&', '*', '(', ')', '-', '_', '+', '=', '{', '}', '[', ']', '\\', '|', '/', '\'', '<', '>', ',', '.'), ' ', $text);
+		// Remove duplicate spaces.
+		$text =  trim(preg_replace('/ {2,}/', ' ', $text));
+		// Turn into an array.
+		$words = ($text) ? explode(' ', $text) : array();
+		$letters = strlen(preg_replace('![^a-z]+!', '', strtolower($text)));
+		$price = $letters * 0.00002;
+	}
+	$form['words'] = [
+		'#type' => 'label',
+		'#value' => 'Words ' . $words . ', price: ' . $price
+	];
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function pagedesigner_content_form_tmgmt_content_translate_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	$languages = \Drupal::languageManager()->getLanguages();
+	$lg_code = '';
+	foreach ($languages as $langcode => $language) {
+		if ($langcode == LanguageInterface::LANGCODE_DEFAULT) {
+			// Never show language neutral on the overview.
+			continue;
+		}
+		$lg_code = $langcode;
+
+		/*$form['languages'][$langcode]['#prefix'] = '<div id="tmgmt-ui-container-language" class="tmgmt-ui-container-language">';
+		$form['languages'][$langcode]['#suffix'] = '</div>';
+
+		$form['slots']['#prefix'] = '<div id="fruit-check">';
+
+
+		'#ajax' => [
+        'callback' => [$this, 'ajaxUpdateSettings'],
+        'event' => 'change',
+        'wrapper' => 'key-settings',
+      ],
+		$form['slots']['#suffix'] = '</div>';
+		*/
+	}
+	$current_path = \Drupal::service('path.current')->getPath();
+	$url =  explode('/',explode('/translations', $current_path)[0]);
+	$nid = end($url);
+
+
+	$entity = \Drupal\node\Entity\Node::load($nid);
+
+		$job = tmgmt_job_create($entity->language()->getId(), $lg_code, \Drupal::currentUser()->id());
+		try {
+			// Add the job item.
+			$job->addItem('content', $entity->getEntityTypeId(), $entity->id());
+			$job->translator = 'deepl_pro';
+			$menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+			$result = $menu_link_manager->loadLinksByRoute('entity.node.canonical', ['node' => $entity->id()]);
+			$menu_link = reset($result);
+			$menu_link_entity = \Drupal::entityTypeManager()->getStorage('menu_link_content')->load($menu_link->getMetaData()['entity_id']);
+			if ($menu_link_entity)
+				$job->addItem('content',  $menu_link_entity->getEntityTypeId(), $menu_link_entity->id());
+			$job->save();
+		}
+		catch (TMGMTException $e) {
+			watchdog_exception('tmgmt', $e);
+		}
+		$text = count_chars_recursively($job->getData());
+		$text = strip_tags($text);
+		$text = str_replace(array('`', '~', '!', '@', '"', '#', '$', ';', '%', '^', ':', '?', '&', '*', '(', ')', '-', '_', '+', '=', '{', '}', '[', ']', '\\', '|', '/', '\'', '<', '>', ',', '.'), ' ', $text);
+		// Remove duplicate spaces.
+		$text =  trim(preg_replace('/ {2,}/', ' ', $text));
+		// Turn into an array.
+		$words = ($text) ? explode(' ', $text) : array();
+		$letters = strlen(preg_replace('![^a-z]+!', '', strtolower($text)));
+		$price = $letters * 0.00002;
+		$storage = \Drupal::entityTypeManager()->getStorage('tmgmt_job');
+		$entities = $storage->loadMultiple([$job->id()]);
+		$storage->delete($entities);
+		$form['label_price'] = [
+			'#type' => 'label',
+			'#title' => 'Words: ' . count($words) . ', Price: ' . $price . '$ per translation',
+			'#weight' => 11,
+		];
+		$form['deepl'] = [
+			'#value' => t('Translate selected languages with Deepl'),
+			'#type' => 'submit',
+			'#submit' => ['pagedesigner_content_submit_translations'],
+			'#weight' => 10
+		];
+
+}
+/**
+ * Updates the configuration object container element.
+ */
+ function changeConfigObject($form, FormStateInterface $form_state) {
+	 $entity = $form_state->get('entity');
+	 $values = $form_state->getValues();
+	 foreach (array_keys(array_filter($values['languages'])) as $langcode) {
+		 $job = tmgmt_job_create($entity->language()->getId(), $langcode, \Drupal::currentUser()->id());
+		 try {
+			 // Add the job item.
+			 $job->addItem('content', $entity->getEntityTypeId(), $entity->id());
+			 //$job->translator = 'deepl_pro';
+			 //$job->save();
+		 }
+		 catch (TMGMTException $e) {
+			 watchdog_exception('tmgmt', $e);
+		 }
+		 $text = count_chars_recursively($job->getData());
+		 $text = strip_tags($text);
+		 $text = str_replace(array('`', '~', '!', '@', '"', '#', '$', ';', '%', '^', ':', '?', '&', '*', '(', ')', '-', '_', '+', '=', '{', '}', '[', ']', '\\', '|', '/', '\'', '<', '>', ',', '.'), ' ', $text);
+		 // Remove duplicate spaces.
+		 $text =  trim(preg_replace('/ {2,}/', ' ', $text));
+		 // Turn into an array.
+		 $words = ($text) ? explode(' ', $text) : array();
+		 $letters = strlen(preg_replace('![^a-z]+!', '', strtolower($text)));
+		 $price = $letters * 0.00002;
+		 $storage = \Drupal::entityTypeManager()->getStorage('tmgmt_job');
+		 $entities = $storage->loadMultiple([$job->id()]);
+		 $storage->delete($entities);
+	 }
+	 $form['words'] = [
+		 '#type' => 'label',
+		 '#value' => 'Words ' . $words . ', price: ' . $price
+	 ];
+
+
+	 $form['tryout']['#type'] = 'markup';
+	 $form['languages']['#header'] = [];
+	 $form_state->setRebuild();
+
+	 return $form['languages'];
+}
+
+function pagedesigner_content_submit_translations(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+
+
+	$entity = $form_state->get('entity');
+	$values = $form_state->getValues();
+	$batch = [
+		'title' => t('Translating'),
+		'operations' => [],
+		'finished' => 'pagedesigner_content_finished_translation'
+		//'file' => 'path_to_file_containing_myfunctions',
+	];
+	/*$lgs = implode('-', array_keys(array_filter($values['languages'])));
+	$form_state->setRedirect('pagedesigner_tmgmt.accept_translation', [], ['query' => ['nid' => $entity->id(), 'languages' => $lgs]]);
+	return;*/
+	$menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+	$result = $menu_link_manager->loadLinksByRoute('entity.node.canonical', ['node' => $entity->id()]);
+	$menu_link = reset($result);
+	$menu_link_entity = \Drupal::entityTypeManager()->getStorage('menu_link_content')->load($menu_link->getMetaData()['entity_id']);
+
+	foreach (array_keys(array_filter($values['languages'])) as $langcode) {
+		// Create the job object.
+		$job = tmgmt_job_create($entity->language()->getId(), $langcode, \Drupal::currentUser()->id());
+		try {
+			// Add the job item.
+			$job->addItem('content', $entity->getEntityTypeId(), $entity->id());
+			if ($menu_link_entity)
+				$job->addItem('content',  $menu_link_entity->getEntityTypeId(), $menu_link_entity->id());
+
+			$job->translator = 'deepl_pro';
+			$job->save();
+
+			$batch['operations'][] = ['pagedesigner_content_process_translation',[$job]];
+
+		}
+		catch (TMGMTException $e) {
+			watchdog_exception('tmgmt', $e);
+		}
+	}
+	batch_set($batch);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function pagedesigner_content_form_node_page_edit_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	if ($form_state->getFormObject()->getEntity()->getUntranslated()->language()->getId() != $form_state->getFormObject()->getEntity()->language()->getId()) {
+		$title = '/admin/tmgmt/sources/content/node?title=' . $form_state->getFormObject()->getEntity()->getTitle() . '&type=page';
+		$form['retranslate'] = [
+			'#type' => 'markup',
+			'#markup' => t('<p>To overwrite the translate, go to <a href=" ' . $title. '">Content overview</a> and request translation. </p>'),
+			'#weight' => 10
+		];
+	}
+}
+
+/**
+ * Implements hook_entity_translation_create().
+ */
+function pagedesigner_content_entity_postsave(\Drupal\Core\Entity\EntityInterface $translation, $op)
+{
+	// Auto generate path aliases.
+	if ($translation->id()) {
+		\Drupal::service('pathauto.generator')->updateEntityAlias($translation, 'bulkupdate', ['message' => TRUE]);
+
+	}
+}
