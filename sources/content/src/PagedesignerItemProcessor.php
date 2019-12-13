@@ -45,24 +45,34 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 	 */
 	public function setTranslations($field_data, FieldItemListInterface $field) {
 
-		self::$sourceLanguage = $field[0]->getParent()->getEntity()->getUntranslated()->language()->getId();
+		if ($field[0]) {
+			self::$sourceLanguage = $field[0]->getParent()->getEntity()->getUntranslated()->language()->getId();
 
 
-		$language = $field[0]->getParent()->getEntity()->language()->getId();
-		$container = \Drupal\pagedesigner\Entity\Element::load($field[0]->getValue()['target_id']);
+			$language = $field[0]->getParent()->getEntity()->language()->getId();
+			$container = \Drupal\pagedesigner\Entity\Element::load($field[0]->getValue()['target_id']);
 
-		if ($container->hasTranslation(self::$sourceLanguage)) {
-			$sourceContainer = 	$container->getTranslation(self::$sourceLanguage);
+			if ($container->hasTranslation(self::$sourceLanguage)) {
+				$sourceContainer = 	$container->getTranslation(self::$sourceLanguage);
+			}
+			// $container->removeTranslation($language);
+			if (!$container->hasTranslation($language))
+				$container->addTranslation($language)->save();
+			$targetContainer = 	$container->getTranslation($language);
+
+			self::$translationData = $field_data;
+			/*var_dump(self::$sourceLanguage);
+			var_dump($language);
+			var_dump($container->id());
+			var_dump($sourceContainer->id());
+			var_dump($targetContainer->id());
+			\Drupal::messenger()->addMessage(self::$sourceLanguage . $language . $container->id() . $sourceContainer->id() . $targetContainer->id());
+			die();*/
+			\Drupal::service('pagedesigner.service.statechanger')->copyContainer($sourceContainer, $targetContainer, true);
+
+
+
 		}
-		if (!$container->hasTranslation($language)) {
-			$sourceContainer->addTranslation($language)->save();
-		}
-		$targetContainer = 	$container->getTranslation($language);
-
-		self::$translationData = $field_data;
-		\Drupal::service('pagedesigner.service.statechanger')->copyContainer($sourceContainer, $targetContainer);
-
-
 
 
 		//$stateChanger = \Drupal::service('pagedesigner.service.statechanger');
