@@ -193,6 +193,7 @@ function pagedesigner_content_form_tmgmt_content_translate_form_alter(&$form, \D
 
 	$entity = \Drupal\node\Entity\Node::load($nid);
 
+	if (isset($entity)) {
 		$job = tmgmt_job_create($entity->language()->getId(), $lg_code, \Drupal::currentUser()->id());
 		try {
 			// Add the job item.
@@ -232,7 +233,7 @@ function pagedesigner_content_form_tmgmt_content_translate_form_alter(&$form, \D
 			'#submit' => ['pagedesigner_content_submit_translations'],
 			'#weight' => 10
 		];
-
+	}
 }
 
 function pagedesigner_content_submit_translations(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
@@ -241,24 +242,14 @@ function pagedesigner_content_submit_translations(&$form, \Drupal\Core\Form\Form
 	$operations = [];
 
 
-	$menu_link_manager = \Drupal::service('plugin.manager.menu.link');
-	$result = $menu_link_manager->loadLinksByRoute('entity.node.canonical', ['node' => $entity->id()]);
-	$menu_link = reset($result);
-	$menu_link_entity = \Drupal::entityTypeManager()->getStorage('menu_link_content')->load($menu_link->getMetaData()['entity_id']);
 
 	foreach (array_keys(array_filter($values['languages'])) as $langcode) {
 		// Create the job object.
 		try {
-			$job = tmgmt_job_create($entity->getUntranslated()->language()->getId(), $langcode, \Drupal::currentUser()->id());
-			// Add the job item.
-			$job->addItem('content', $entity->getEntityTypeId(), $entity->id());
-			if ($menu_link_entity)
-				$job->addItem('content', $menu_link_entity->getEntityTypeId(), $menu_link_entity->id());
+			$operations[] = ['pagedesigner_tmgmt_job_create_batch', [$entity, $langcode]];
 
-			$job->translator = 'deepl_pro';
-			$job->save();
 
-			$operations[] = ['pagedesigner_content_process_translation', [$job]];
+			//$operations[] = ['pagedesigner_content_process_translation', [$job]];
 
 		}
 		catch (TMGMTException $e) {
@@ -274,6 +265,21 @@ function pagedesigner_content_submit_translations(&$form, \Drupal\Core\Form\Form
 	batch_set($batch);
 }
 
+function pagedesigner_tmgmt_job_create_batch($entity, $langcode) {
+	$menu_link_manager = \Drupal::service('plugin.manager.menu.link');
+	$result = $menu_link_manager->loadLinksByRoute('entity.node.canonical', ['node' => $entity->id()]);
+	$menu_link = reset($result);
+	$menu_link_entity = \Drupal::entityTypeManager()->getStorage('menu_link_content')->load($menu_link->getMetaData()['entity_id']);
+	$job = tmgmt_job_create($entity->getUntranslated()->language()->getId(), $langcode, \Drupal::currentUser()->id());
+	// Add the job item.
+	$job->addItem('content', $entity->getEntityTypeId(), $entity->id());
+	if ($menu_link_entity)
+		$job->addItem('content', $menu_link_entity->getEntityTypeId(), $menu_link_entity->id());
+
+	$job->translator = 'deepl_pro';
+	$job->save();
+	pagedesigner_content_process_translation($job);
+}
 /**
  * Implements hook_form_FORM_ID_alter().
  */
@@ -336,7 +342,14 @@ function pagedesigner_content_tmgmt_source_suggestions(array $items, JobInterfac
 	return $suggestions;
 }
 
-
+/**
+ * Implements hook_form_alter().
+ */
+function pagedesigner_content_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	/*var_dump($form_id);
+	die();*/
+}
 
 function count_chars_recursively($data) {
 	if (is_array($data)) {

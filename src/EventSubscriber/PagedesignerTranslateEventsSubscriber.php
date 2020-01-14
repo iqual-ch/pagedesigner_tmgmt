@@ -2,10 +2,8 @@
 
 namespace Drupal\pagedesigner_tmgmt\EventSubscriber;
 
-use Drupal\Core\Config\ConfigCrudEvent;
-
-use Drupal\pagedesigner\Event\PagedesignerCopyEvent;
-use Drupal\pagedesigner\StateChangerEvents;
+use Drupal\pagedesigner\ElementEvents;
+use Drupal\pagedesigner\Event\ElementEvent;
 use Drupal\pagedesigner_content\PagedesignerItemProcessor;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -24,7 +22,7 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
 	 */
 	public static function getSubscribedEvents() {
 		return [
-			StateChangerEvents::COPY => 'pagedesignerItemCopy',
+			ElementEvents::COPY_AFTER => 'pagedesignerItemCopy',
 		];
 	}
 
@@ -33,22 +31,29 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
 	/**
 	 * React to a pagedesigner item being copied.
 	 *
-	 * @param \Drupal\pagedesigner\Event\PagedesignerCopyEvent $event
+	 * @param \Drupal\pagedesigner\Event\ElementEvent $event
 	 *   Pagedesigner copy event.
 	 */
-	public function pagedesignerItemCopy(PagedesignerCopyEvent $event) {
-		$clone = $event->getClone();
-		$entity = $event->getEntity();
+	public function pagedesignerItemCopy(ElementEvent $event) {
+		$clone = $event->getData()[2];
+		$entity = $event->getData()[0];
+		return;
 
 		if ($this->translation_data == null)
 			$this->translation_data = PagedesignerItemProcessor::$translationData;
+
 		if(isset($this->translation_data['pagedesigner_item'][$entity->id()])) {
 			if($this->translation_data['pagedesigner_item'][$entity->id()]['#translate']) {
-				$handler = \Drupal::service('plugin.manager.pagedesigner_handler')->createInstance($clone->bundle());
+				$handler = \Drupal::service('pagedesigner.service.element_handler');
 				if (isset($this->translation_data['pagedesigner_item'][$entity->id()]['#translation']) && isset($this->translation_data['pagedesigner_item'][$entity->id()]['#translation']["#text"]))
-					$handler->patch($clone, $this->translation_data['pagedesigner_item'][$entity->id()]['#translation']["#text"]);
+					$handler->patch($clone, [$this->translation_data['pagedesigner_item'][$entity->id()]['#translation']["#text"]]);
 			}
 		}
+		$clone->save();
+		/*var_dump('Dojdovne');
+		echo "</br></br>";
+		var_dump($clone );
+		die();*/
 	}
 
 }

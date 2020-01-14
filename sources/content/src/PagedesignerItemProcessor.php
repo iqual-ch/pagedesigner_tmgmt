@@ -6,7 +6,7 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\tmgmt_content\DefaultFieldProcessor;
 
 /**
- * Field processor for the metatags field.
+ * Field processor for the pagedesigner field.
  */
 class PagedesignerItemProcessor extends DefaultFieldProcessor {
 
@@ -27,16 +27,30 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 		$data['pagedesigner_item']['#label'] = 'Pagedesigner container';
 		$data['pagedesigner_item']['#container_id'] = $field[0]->getValue()['target_id'];
 
+		$text = "";
+		$i = 0;
 		foreach ($field[0]->getTranslationContent($field[0]->getValue()['target_id'], $language, false) as $key => $value) {
+			$i++;
 			$element = \Drupal::entityTypeManager()->getStorage('pagedesigner_element')->load($key);
+			$text .= $value;
+			/*if ($i > 1) {
+				continue;
+			}*/
+			if ($element->get('name')->getValue()[0]['value'] == 'image') {
+				continue;
+			}
 			$data['pagedesigner_item'][$key] =
 				[
 					'#translate' => true,
 					'#text' => $value, //$element->field_content->value,
-					'#label' => $element->get('name')->getValue()[0]['value']
+					'#label' => $element != NULL ? $element->get('name')->getValue()[0]['value'] : 'pd_item',
 				];
 		}
 
+		/*var_dump($field[0]->getTranslationContent($field[0]->getValue()['target_id'], $language, false));
+		die();*/
+		/*var_dump($data);
+		die();*/
 		return $data;
 	}
 
@@ -69,33 +83,8 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 			\Drupal::messenger()->addMessage(self::$sourceLanguage . $language . $container->id() . $sourceContainer->id() . $targetContainer->id());
 			die();*/
 			\Drupal::service('pagedesigner.service.statechanger')->copyContainer($sourceContainer, $targetContainer, true);
-
-
-
+			$targetContainer->save();
 		}
-
-
-		//$stateChanger = \Drupal::service('pagedesigner.service.statechanger');
-
-		//$clone = $stateChanger->copy($entity, $container)->getOutput();
-		/*$meta_tags_values = [];
-
-		// Loop over the groups and tags, either use the translated text or the
-		// original and then serialize the whole structure again.
-		foreach (Element::children($field_data) as $group_name) {
-			foreach (Element::children($field_data[$group_name]) as $tag_name) {
-
-				$property_data = $field_data[$group_name][$tag_name];
-				if (isset($property_data['#translation']['#text']) && $property_data['#translate']) {
-					$meta_tags_values[$tag_name] = $property_data['#translation']['#text'];
-				}
-				else {
-					$meta_tags_values[$tag_name] =$property_data['#text'];
-				}
-			}
-		}
-
-		$field->value = serialize($meta_tags_values);*/
 	}
 
 
