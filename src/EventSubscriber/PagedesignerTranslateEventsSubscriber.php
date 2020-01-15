@@ -37,7 +37,6 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
 	public function pagedesignerItemCopy(ElementEvent $event) {
 		$clone = $event->getData()[2];
 		$entity = $event->getData()[0];
-		return;
 
 		if ($this->translation_data == null)
 			$this->translation_data = PagedesignerItemProcessor::$translationData;

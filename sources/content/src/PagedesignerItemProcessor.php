@@ -51,16 +51,17 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 		die();*/
 		/*var_dump($data);
 		die();*/
-		return $data;
+    return $data;
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function setTranslations($field_data, FieldItemListInterface $field) {
-
+    self::$translationData = $field_data;
 		if ($field[0]) {
-			self::$sourceLanguage = $field[0]->getParent()->getEntity()->getUntranslated()->language()->getId();
+
+      self::$sourceLanguage = $field[0]->getParent()->getEntity()->getUntranslated()->language()->getId();
 
 
 			$language = $field[0]->getParent()->getEntity()->language()->getId();
@@ -74,7 +75,6 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 				$container->addTranslation($language)->save();
 			$targetContainer = 	$container->getTranslation($language);
 
-			self::$translationData = $field_data;
 			/*var_dump(self::$sourceLanguage);
 			var_dump($language);
 			var_dump($container->id());
@@ -82,7 +82,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 			var_dump($targetContainer->id());
 			\Drupal::messenger()->addMessage(self::$sourceLanguage . $language . $container->id() . $sourceContainer->id() . $targetContainer->id());
 			die();*/
-			\Drupal::service('pagedesigner.service.statechanger')->copyContainer($sourceContainer, $targetContainer, true);
+			\Drupal::service('pagedesigner.service.statechanger')->copyContainer($sourceContainer, $targetContainer, $field_data, true);
 			$targetContainer->save();
 		}
 	}

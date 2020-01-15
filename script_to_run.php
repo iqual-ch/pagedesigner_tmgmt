@@ -52,8 +52,8 @@ foreach ($elements as $element) {
               $attach[] = $item->entity->id();
             }
           }
-          $entity->children->setValue($attach);
-          $entity->save();
+          /*$entity->children->setValue($attach);
+          $entity->save();*/
           if (!$foundDuplicate) {
             // echo 'something else on ' . $item->entity->id() . "\n";
           }
