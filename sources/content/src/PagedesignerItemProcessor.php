@@ -3,7 +3,9 @@
 namespace Drupal\pagedesigner_content;
 
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\TempStore\SharedTempStore;
 use Drupal\tmgmt_content\DefaultFieldProcessor;
+use Drupal\tmgmt_deepl\Plugin\tmgmt\Translator\DeeplProTranslator;
 
 /**
  * Field processor for the pagedesigner field.
@@ -35,10 +37,10 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 			$text .= $value;
 			/*if ($i > 1) {
 				continue;
-			}*/
+			}
 			if ($element->get('name')->getValue()[0]['value'] == 'image') {
 				continue;
-			}
+			}*/
 			$data['pagedesigner_item'][$key] =
 				[
 					'#translate' => true,
@@ -58,8 +60,12 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 	 * {@inheritdoc}
 	 */
 	public function setTranslations($field_data, FieldItemListInterface $field) {
+
     self::$translationData = $field_data;
-		if ($field[0]) {
+    /** @var SharedTempStore $store */
+    $store = \Drupal::service('user.shared_tempstore')->get('pagedesigner.tmgmt_data');
+    $store->set($field[0]->getValue()['target_id'], $field_data);
+    if ($field[0]) {
 
       self::$sourceLanguage = $field[0]->getParent()->getEntity()->getUntranslated()->language()->getId();
 
@@ -74,16 +80,12 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 			if (!$container->hasTranslation($language))
 				$container->addTranslation($language)->save();
 			$targetContainer = 	$container->getTranslation($language);
-
-			/*var_dump(self::$sourceLanguage);
-			var_dump($language);
-			var_dump($container->id());
-			var_dump($sourceContainer->id());
-			var_dump($targetContainer->id());
-			\Drupal::messenger()->addMessage(self::$sourceLanguage . $language . $container->id() . $sourceContainer->id() . $targetContainer->id());
-			die();*/
-			\Drupal::service('pagedesigner.service.statechanger')->copyContainer($sourceContainer, $targetContainer, $field_data, true);
-			$targetContainer->save();
+      $batch =\Drupal::service('pagedesigner.service.statechanger')->copyContainer($sourceContainer, $targetContainer, $field_data, true);
+      $store = \Drupal::service('user.shared_tempstore')->get('pagedesigner.tmgmt_data');
+      if (!$store->get('deepl_translator_auto_accept')) {
+        batch_set($batch);
+      }
+      return $batch;
 		}
 	}
 

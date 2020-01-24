@@ -307,7 +307,6 @@ function pagedesigner_content_entity_postsave(\Drupal\Core\Entity\EntityInterfac
 	}
 }
 
-
 /**
  * Implements hook_tmgmt_source_suggestions().
  */

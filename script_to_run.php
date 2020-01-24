@@ -1,7 +1,15 @@
 <?php
 
 use \Drupal\pagedesigner\Entity\Element;
-
+$store = \Drupal::service('user.shared_tempstore')->get('pagedesigner.tmgmt_data');
+$store->set(70760, ['pagedesigner_item' => ['70764' => ['#translate' => true, '#translation' =>['#text' => 'Now we are testing.']]]]);
+$container = Element::load(70760);
+if (!$container->hasTranslation('en'))
+  $targetContainer = $container->addTranslation('en');
+else
+  $targetContainer = $container->getTranslation('en');
+$structure = \Drupal::service('pagedesigner.service.statechanger')->copyContainer($container, $targetContainer, [])->getOutput();
+die();
 $pids = [];
 
 $numFields = [];
@@ -69,11 +77,12 @@ foreach ($elements as $element) {
         echo 'Result: ' . (count($entity->children) - count($toDelete)) . "\n";
         break;
       } else {
-        echo 'Deleting ' . count($toDelete) . ' fields on ' . $entity->id();
+        echo 'Deleting ' . count($toDelete) . ' fields on ' . $entity->id() . "\n";
         foreach ($toDelete as $item) {
-          $item->delete();
+          echo "deleting " . $item->id() . "\n";
+          //$item->delete();
         }
-        \Drupal::entityTypeManager()->getStorage('pagedesigner_element')->load($entity->id())->save();
+        //\Drupal::entityTypeManager()->getStorage('pagedesigner_element')->load($entity->id())->save();
         //$entity->save();
       }
     }

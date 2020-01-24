@@ -5,3 +5,11 @@ pagedesigner_tmgmt.accept_translation:
     _title: 'Accept translations'
   requirements:
     _role: 'authenticated'
+
+pagedesigner_tmgmt.auto_translation:
+  path: '/accept/translation/{job_item}'
+  defaults:
+    _controller: '\Drupal\pagedesigner_tmgmt\Controller\PagedesignerTranslationController::formatDisplay'
+    _title: 'Auto translation'
+  requirements:
+    _role: 'authenticated'

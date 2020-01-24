@@ -2,6 +2,7 @@
 
 namespace Drupal\pagedesigner_tmgmt\EventSubscriber;
 
+use Drupal\Core\TempStore\SharedTempStore;
 use Drupal\pagedesigner\ElementEvents;
 use Drupal\pagedesigner\Event\ElementEvent;
 use Drupal\pagedesigner_content\PagedesignerItemProcessor;
@@ -37,9 +38,9 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
 	public function pagedesignerItemCopy(ElementEvent $event) {
 		$clone = $event->getData()[2];
 		$entity = $event->getData()[0];
-
-		if ($this->translation_data == null)
-			$this->translation_data = PagedesignerItemProcessor::$translationData;
+		$container  = $event->getData()[1];
+    $store = \Drupal::service('user.shared_tempstore')->get('pagedesigner.tmgmt_data');
+    $this->translation_data = $store->get($container->id());
 
 		if(isset($this->translation_data['pagedesigner_item'][$entity->id()])) {
 			if($this->translation_data['pagedesigner_item'][$entity->id()]['#translate']) {
