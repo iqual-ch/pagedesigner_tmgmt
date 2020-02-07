@@ -31,12 +31,14 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
     $text = "";
     $i = 0;
     foreach ($field[0]->getTranslationContent($field[0]->getValue()['target_id'], $language, FALSE) as $key => $value) {
-      $i++;
       $element = \Drupal::entityTypeManager()
         ->getStorage('pagedesigner_element')
         ->load($key);
+      /*if ($element->get('name')->getValue()[0]['value'] == 'image') {
+        continue;
+      }*/
+      $i++;
       $text .= $value;
-
       $data['pagedesigner_item'][$key] =
         [
           '#translate' => TRUE,
@@ -58,8 +60,8 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
     /** @var SharedTempStore $store */
     $store = \Drupal::service('user.shared_tempstore')
       ->get('pagedesigner.tmgmt_data');
-    $store->set($field[0]->getValue()['target_id'], $field_data);
     if ($field[0]) {
+      $store->set($field[0]->getValue()['target_id'], $field_data);
 
       self::$sourceLanguage = $field[0]->getParent()
         ->getEntity()

@@ -23,10 +23,15 @@ class PagedesignerTranslationController extends ControllerBase {
     $plugin->saveTranslation($job_item, $job_item->getJob()
       ->getTargetLangcode());
     $data = $job_item->getData();
-
+    $store = \Drupal::service('user.shared_tempstore')
+      ->get('pagedesigner.tmgmt_data');
     $entity = \Drupal::entityTypeManager()
       ->getStorage($job_item->getItemType())
       ->load($job_item->getItemId());
+    if (!isset($entity) || $entity == NULL) {
+      $job_id = $store->get('deepl_job_id');
+      return new RedirectResponse('/admin/tmgmt/jobs/' . $job_id);
+    }
     $target_langcode = $job_item->getJob()->getTargetLangcode();
     if (!$entity->hasTranslation($target_langcode)) {
       $entity->addTranslation($target_langcode, $entity->toArray());
@@ -55,8 +60,7 @@ class PagedesignerTranslationController extends ControllerBase {
         return batch_process();
       }
     }
-    $store = \Drupal::service('user.shared_tempstore')
-      ->get('pagedesigner.tmgmt_data');
+
     // If the translation provider is auto accepting, redirect to translate
     // the next job item.
     if ($store->get('deepl_translator_auto_accept')) {
@@ -97,6 +101,10 @@ class PagedesignerTranslationController extends ControllerBase {
     $store = \Drupal::service('user.shared_tempstore')
       ->get('pagedesigner.tmgmt_data');
     $job_items = $store->get('deepl_tmgmt_job_items');
+    if (count($job_items) == 1) {
+      $job_id = $store->get('deepl_job_id');
+      return new RedirectResponse('/admin/tmgmt/jobs/' . $job_id);
+    }
 
     $next = FALSE;
     $last_job_entity_id = $results['job_entity_id'];
@@ -109,7 +117,7 @@ class PagedesignerTranslationController extends ControllerBase {
       foreach ($job_items as $job_item) {
         $job_item = JobItem::load($job_item);
         // If the next job item is set to be translated, redirect to do so.
-        if ($next) {
+        if ($next && $job_item->getItemId() != $last_job_entity_id) {
           return new RedirectResponse('/accept/translation/' . $job_item->id());
         }
         // If the last job item is found, the next would need to be translated.
