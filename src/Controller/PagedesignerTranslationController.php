@@ -8,6 +8,9 @@ use Drupal\pagedesigner_content\PagedesignerItemProcessor;
 use Drupal\tmgmt\Entity\JobItem;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
+/**
+ *
+ */
 class PagedesignerTranslationController extends ControllerBase {
 
   /**
@@ -123,13 +126,17 @@ class PagedesignerTranslationController extends ControllerBase {
         // If the last job item is found, the next would need to be translated.
         if ($job_item->getItemId() == $last_job_entity_id) {
           $next = TRUE;
+          $entity = \Drupal::entityTypeManager()
+            ->getStorage($job_item->getItemType())
+            ->load($job_item->getItemId());
+          $store->delete($entity->id());
         }
       }
-
-      $store->set('deepl_tmgmt_job_items', NULL);
-      $store->set('deepl_translator_auto_accept', NULL);
+      $store->delete('deepl_tmgmt_job_items');
+      $store->delete('deepl_translator_auto_accept');
     }
     $job_id = $store->get('deepl_job_id');
     return new RedirectResponse('/admin/tmgmt/jobs/' . $job_id);
   }
+
 }
