@@ -2,10 +2,9 @@
 
 namespace Drupal\pagedesigner_content;
 
+use Drupal\pagedesigner\Entity\Element;
 use Drupal\Core\Field\FieldItemListInterface;
-use Drupal\Core\TempStore\SharedTempStore;
 use Drupal\tmgmt_content\DefaultFieldProcessor;
-use Drupal\tmgmt_deepl\Plugin\tmgmt\Translator\DeeplProTranslator;
 
 /**
  * Field processor for the pagedesigner field.
@@ -24,30 +23,41 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
     $language = $field[0]->getParent()->getEntity()->language()->getId();
 
     self::$sourceLanguage = $language;
-    //var_dump($field[0]->getTranslationContent($field[0]->getValue()['target_id'], $language));
+    $data['pagedesigner_item'] = [];
     $data['pagedesigner_item']['#label'] = 'Pagedesigner container';
     $data['pagedesigner_item']['#container_id'] = $field[0]->getValue()['target_id'];
 
-    $text = "";
-    $i = 0;
-    foreach ($field[0]->getTranslationContent($field[0]->getValue()['target_id'], $language, FALSE) as $key => $value) {
+    // Get the translation content.
+    $translationContent = $field[0]->getTranslationContent($field[0]->getValue()['target_id'], $language, FALSE);
+    foreach ($translationContent as $key => $value) {
+
+      // Set the content translation info.
       $element = \Drupal::entityTypeManager()
         ->getStorage('pagedesigner_element')
         ->load($key);
-      /*if ($element->get('name')->getValue()[0]['value'] == 'image') {
-        continue;
-      }*/
-      $i++;
-      $text .= $value;
       $data['pagedesigner_item'][$key] =
         [
           '#translate' => TRUE,
-          '#text' => $value, //$element->field_content->value,
+          '#text' => $value,
           '#label' => $element != NULL ? $element->get('name')
             ->getValue()[0]['value'] : 'pd_item',
         ];
-    }
 
+      // Get any titles attributes and them to the list for translation.
+      $titleMatches = [];
+      preg_match('/title="(.*?)"/', $value, $titleMatches);
+      if (count($titleMatches) > 0) {
+        $data['pagedesigner_item'][$key]['titles'] = [];
+        foreach ($titleMatches as $titleMatch) {
+          $data['pagedesigner_item'][$key]['titles'][$titleMatch[1]] = [
+            '#translate' => TRUE,
+            '#text' => $titleMatch[1],
+            '#label' => $element != NULL ? $element->get('name')
+              ->getValue()[0]['value'] : 'pd_item',
+          ];
+        }
+      }
+    }
     return $data;
   }
 
@@ -57,7 +67,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
   public function setTranslations($field_data, FieldItemListInterface $field) {
 
     self::$translationData = $field_data;
-    /** @var SharedTempStore $store */
+    /** @var \Drupal\Core\TempStore\SharedTempStore $store */
     $store = \Drupal::service('user.shared_tempstore')
       ->get('pagedesigner.tmgmt_data');
     if ($field[0]) {
@@ -70,7 +80,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
         ->getId();
 
       $language = $field[0]->getParent()->getEntity()->language()->getId();
-      $container = \Drupal\pagedesigner\Entity\Element::load($field[0]->getValue()['target_id']);
+      $container = Element::load($field[0]->getValue()['target_id']);
 
       if ($container->hasTranslation(self::$sourceLanguage)) {
         $sourceContainer = $container->getTranslation(self::$sourceLanguage);
@@ -89,4 +99,5 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
       return $batch;
     }
   }
+
 }
