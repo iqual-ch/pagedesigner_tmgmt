@@ -43,15 +43,17 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
             ->getValue()[0]['value'] : 'pd_item',
         ];
 
-      // Get any titles attributes and them to the list for translation.
+      // Get any titles attributes and add them to the list for translation.
       $titleMatches = [];
-      preg_match('/title="(.*?)"/', $value, $titleMatches);
-      if (count($titleMatches) > 0) {
-        $data['pagedesigner_item'][$key]['titles'] = [];
-        foreach ($titleMatches as $titleMatch) {
-          $data['pagedesigner_item'][$key]['titles'][$titleMatch[1]] = [
+      preg_match_all('/title="(.*?)"/', $value, $titleMatches);
+      if (count($titleMatches) > 0 && count($titleMatches[1]) > 0) {
+        foreach ($titleMatches[1] as $titleMatch) {
+          $key_title = strtolower($titleMatch);
+          $key_title = preg_replace('/[^a-z0-9_]+/', '_', $key_title);
+          $key_title = preg_replace('/_+/', '_', $key_title);
+          $data['pagedesigner_item'][$key . '_titles_' . $key_title] = [
             '#translate' => TRUE,
-            '#text' => $titleMatch[1],
+            '#text' => $titleMatch,
             '#label' => $element != NULL ? $element->get('name')
               ->getValue()[0]['value'] : 'pd_item',
           ];
