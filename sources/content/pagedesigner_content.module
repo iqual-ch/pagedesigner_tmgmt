@@ -126,7 +126,7 @@ function pagedesigner_content_process_translation($job) {
 		$job->save();
 	}
 	catch (TMGMTException $e) {
-		watchdog_exception($e);
+		watchdog_exception('tmgmt', $e);
 	}
 }
 

@@ -1,0 +1,21 @@
+langcode: de
+status: true
+dependencies:
+  module:
+    - tmgmt_deepl
+name: deepl_pro
+label: 'Deepl Pro'
+description: ''
+auto_accept: false
+weight: null
+plugin: deepl_pro
+settings:
+  auth_key: 256841ec-960b-6b73-ef9f-3e56c66a9883
+  url: null
+  url_usage: null
+  tag_handling: xml
+  non_splitting_tags: ''
+  ignore_tags: ''
+  split_sentences: 1
+  preserve_formatting: 0
+
