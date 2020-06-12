@@ -7,5 +7,3 @@ type: module
 dependencies:
   - pagedesigner_tmgmt:pagedesigner_tmgmt
   - hook_post_action:hook_post_action
-  - tmgmt:tmgmt_demo
-
