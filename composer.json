@@ -1,0 +1,19 @@
+{
+  "name": "iqual/pagedesigner_tmgmt",
+  "description": "Integrate pagedesigner with deepl",
+  "type": "drupal-custom-module",
+  "keywords": [
+    "Drupal",
+    "Editing"
+  ],
+  "homepage": "https://github.com/iqual-ch/pagedesigner_tmgmt",
+  "support": {
+    "issues": "https://github.com/iqual-ch/pagedesigner_tmgmt/issues",
+    "source": "https://github.com/iqual-ch/pagedesigner_tmgmt"
+  },
+  "license": "GPL-2.0+",
+  "require": {
+    "drupal/pagedesigner": "*",
+    "drupal/tmgmt": "*"
+  }
+}
