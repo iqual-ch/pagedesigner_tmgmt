@@ -91,14 +91,18 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
         $container->addTranslation($language)->save();
       }
       $targetContainer = $container->getTranslation($language);
-      $batch = \Drupal::service('pagedesigner.service.statechanger')
-        ->copyContainer($sourceContainer, $targetContainer, $field_data, TRUE);
-      $store = \Drupal::service('user.shared_tempstore')
-        ->get('pagedesigner.tmgmt_data');
-      if (!$store->get('deepl_translator_auto_accept')) {
-        batch_set($batch);
-      }
+      if ($sourceContainer != NULL && $targetContainer != NULL) {
+        $batch = \Drupal::service('pagedesigner.service.statechanger')
+          ->copyContainer($sourceContainer, $targetContainer, $field_data, TRUE);
+        $store = \Drupal::service('user.shared_tempstore')
+          ->get('pagedesigner.tmgmt_data');
+        if (!$store->get('deepl_translator_auto_accept')) {
+          batch_set($batch);
+        }
+
       return $batch;
+      }
+      return;
     }
   }
 
