@@ -3,7 +3,7 @@ description: Translation functionality and integration between TMGMT and Pagedes
 package: pagedesigner_tmgmt
 
 type: module
-core: 8.x
+core_version_requirement: ^8.8 || ^9
 
 dependencies:
   - pagedesigner:pagedesigner
