@@ -28,7 +28,11 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
     $data['pagedesigner_item']['#container_id'] = $field[0]->getValue()['target_id'];
 
     // Get the translation content.
-    $translationContent = $field[0]->getContent($field[0]->getValue()['target_id'], $language, FALSE);
+    $manager = \Drupal::typedDataManager();
+    $data_definition = $manager->createDataDefinition('pagedesigner_item_data');
+    $typed_data = $manager->create($data_definition, $field[0]);
+    $translationContent = $typed_data->getContent($field[0]->getValue()['target_id'], $language, FALSE);
+
     foreach ($translationContent as $key => $value) {
 
       // Set the content translation info.
