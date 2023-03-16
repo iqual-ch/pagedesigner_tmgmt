@@ -97,7 +97,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
       }
       $targetContainer = $container->getTranslation($language);
       if ($sourceContainer != NULL && $targetContainer != NULL) {
-        $batch = \Drupal::service('pagedesigner.service.statechanger')
+        $batch = \Drupal::service('pagedesigner_content.state_changer')
           ->copyContainer($sourceContainer, $targetContainer, $field_data, TRUE);
         $store = \Drupal::service('tempstore.shared')
           ->get('pagedesigner.tmgmt_data');
