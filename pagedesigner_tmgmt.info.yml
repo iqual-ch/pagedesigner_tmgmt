@@ -7,5 +7,7 @@ core_version_requirement: ^8.8 || ^9
 
 dependencies:
   - pagedesigner:pagedesigner
+  - pagedesigner_tmgmt:pagedesigner_tmgmt_content
   - tmgmt:tmgmt
+  - tmgmt:tmgmt_content
   - tmgmt_deepl:tmgmt_deepl

@@ -15,6 +15,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface {
 
+  public $translation_data = NULL;
+
   /**
    * {@inheritdoc}
    *
@@ -27,8 +29,6 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
     ];
   }
 
-  public $translation_data = NULL;
-
   /**
    * React to a pagedesigner item being copied.
    *
@@ -40,7 +40,7 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
     $entity = $event->getData()[0];
     $container = $event->getData()[1];
     $handler = \Drupal::service('pagedesigner.service.element_handler');
-    $store = \Drupal::service('user.shared_tempstore')->get('pagedesigner.tmgmt_data');
+    $store = \Drupal::service('tempstore.shared')->get('pagedesigner.tmgmt_data');
     $this->translation_data = $store->get($container->id());
 
     // Check for translation data.
@@ -53,20 +53,19 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
         preg_match_all('/title="(.*?)"/', $translatedText, $titleMatches);
 
         // Replace title attributes with translation.
-        if (isset($titleMatches) && count($titleMatches) > 0 && count($titleMatches[1]) > 0) {
+        if (count($titleMatches) > 0 && count($titleMatches[1]) > 0) {
           foreach ($titleMatches[1] as $titleMatch) {
             $key_title = strtolower($titleMatch);
             $key_title = preg_replace('/[^a-z0-9_]+/', '_', $key_title);
             $key_title = preg_replace('/_+/', '_', $key_title);
-            if (isset($this->translation_data['pagedesigner_item'][$entity->id(). '_titles_' . $key_title])) {
-              $origTitle = $this->translation_data['pagedesigner_item'][$entity->id(). '_titles_' . $key_title]['#text'];
-              $translatedTitle = $this->translation_data['pagedesigner_item'][$entity->id(). '_titles_' . $key_title]['#translation']['#text'];
+            if (isset($this->translation_data['pagedesigner_item'][$entity->id() . '_titles_' . $key_title])) {
+              $origTitle = $this->translation_data['pagedesigner_item'][$entity->id() . '_titles_' . $key_title]['#text'];
+              $translatedTitle = $this->translation_data['pagedesigner_item'][$entity->id() . '_titles_' . $key_title]['#translation']['#text'];
               $translatedText = str_replace('title="' . $origTitle . '"', 'title="' . $translatedTitle . '"', $translatedText);
             }
 
           }
         }
-
 
         // Update links to point to correct translation.
         $hrefMatches = [];
@@ -84,12 +83,12 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
                 $query = \Drupal::entityQuery('redirect')
                   ->range(0, 1);
                 $or = $query->orConditionGroup();
-                $or->condition('redirect_source__path', ltrim($alias,'/') . '%', 'LIKE');
+                $or->condition('redirect_source__path', ltrim($alias, '/') . '%', 'LIKE');
                 $or->condition('redirect_source__path', substr($alias, 4) . '%', 'LIKE');
                 $query->condition($or);
                 $redirect = $query->execute();
 
-                if (isset($redirect) && $redirect) {
+                if ($redirect) {
                   $redirect = Redirect::load(reset($redirect));
                   $alias = $redirect->get('redirect_redirect')->getValue()[0]['uri'];
                 }

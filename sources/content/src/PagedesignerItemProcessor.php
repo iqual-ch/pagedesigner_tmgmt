@@ -28,10 +28,11 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
     $data['pagedesigner_item']['#container_id'] = $field[0]->getValue()['target_id'];
 
     // Get the translation content.
-    $translationContent = $field[0]->getTranslationContent($field[0]->getValue()['target_id'], $language, FALSE);
+    $translationContent = $field[0]->getContent($field[0]->getValue()['target_id'], $language, FALSE);
     foreach ($translationContent as $key => $value) {
 
       // Set the content translation info.
+      /** @var \Drupal\pagedesigner\Entity\Element $element */
       $element = \Drupal::entityTypeManager()
         ->getStorage('pagedesigner_element')
         ->load($key);
@@ -70,7 +71,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 
     self::$translationData = $field_data;
     /** @var \Drupal\Core\TempStore\SharedTempStore $store */
-    $store = \Drupal::service('user.shared_tempstore')
+    $store = \Drupal::service('tempstore.shared')
       ->get('pagedesigner.tmgmt_data');
     if ($field[0]) {
       $store->set($field[0]->getValue()['target_id'], $field_data);
@@ -83,7 +84,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
 
       $language = $field[0]->getParent()->getEntity()->language()->getId();
       $container = Element::load($field[0]->getValue()['target_id']);
-
+      $sourceContainer = NULL;
       if ($container->hasTranslation(self::$sourceLanguage)) {
         $sourceContainer = $container->getTranslation(self::$sourceLanguage);
       }
@@ -94,13 +95,13 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
       if ($sourceContainer != NULL && $targetContainer != NULL) {
         $batch = \Drupal::service('pagedesigner.service.statechanger')
           ->copyContainer($sourceContainer, $targetContainer, $field_data, TRUE);
-        $store = \Drupal::service('user.shared_tempstore')
+        $store = \Drupal::service('tempstore.shared')
           ->get('pagedesigner.tmgmt_data');
         if (!$store->get('deepl_translator_auto_accept')) {
           batch_set($batch);
         }
 
-      return $batch;
+        return $batch;
       }
       return;
     }
