@@ -14,133 +14,6 @@ use Drupal\pagedesigner_tmgmt\Controller\PagedesignerTranslationController;
 class PagedesignerTMGMTStateChanger extends StateChanger {
 
   /**
-   * @param \Drupal\pagedesigner\Entity\Element $entity
-   *   The entity to copy.
-   * @param \Drupal\pagedesigner\Entity\Element $container
-   *   The container its belong to.
-   * @param $data
-   *   The data to copy.
-   *
-   * @return \Drupal\pagedesigner\Entity\Element|void
-   *   The entity to copy or nothing.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   * @throws \Drupal\Core\Entity\EntityStorageException
-   */
-  public static function copyReferenceData(Element $entity, Element $container, $data) {
-    if ($entity->id() == $container->id() || !isset($data['parent'])) {
-      return;
-    }
-    $parent = Element::load($data['parent']);
-    if ($parent->hasTranslation($data['langcode'])) {
-      $parent = $parent->getTranslation($data['langcode']);
-    }
-    $entity->parent->entity = $parent;
-    $entity->langcode->value = $data['langcode'];
-    $entity->entity->entity = \Drupal::entityTypeManager()
-      ->getStorage('node')
-      ->load($data['entity']);
-    $entity->save();
-    if ($data['reference_field']) {
-      if ($parent->hasField($data['reference_field'])) {
-        $parent->get($data['reference_field'])->appendItem($entity);
-      }
-    }
-    else {
-      $parent->children->appendItem($entity);
-    }
-    $parent->save();
-    return $entity;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function copyFromData(Element $entity, Element $container, $data, &$structure) {
-    $clone = $entity->createDuplicate();
-    $clone->setPublished(FALSE);
-    $clone->container->entity = $container;
-    $clone->langcode->value = $entity->langcode->value;
-    if ($entity->id() == $container->id()) {
-      $structure[$entity->id()]['original'] = $entity->id();
-
-      return $container;
-    }
-
-    if ($container != NULL) {
-      $clone->entity->entity = $container->entity->entity;
-      $clone->langcode->value = $container->langcode->value;
-    }
-    else {
-      $clone->entity->entity = NULL;
-    }
-    if ($clone->children) {
-      $clone->children->setValue([]);
-    }
-    if ($clone->hasField('field_styles')) {
-      $clone->field_styles->setValue([]);
-    }
-    $clone->save();
-
-    $structure[$clone->id()] = $structure[$entity->id()];
-    $structure[$clone->id()]['original'] = $entity->id();
-    // Adjust referencing items.
-    foreach ($structure as $key => $item) {
-      if ($item['parent'] == $entity->id()) {
-        $structure[$key]['parent'] = $clone->id();
-      }
-    }
-    unset($structure[$entity->id()]);
-
-    return $clone;
-  }
-
-  public function copyContainerStructure(Element $sourceContainer, Element $targetContainer) {
-    $structure = [];
-    foreach ($sourceContainer->children as $item) {
-      if ($item->entity != NULL) {
-        $this->copyEntityStructure($item->entity, $targetContainer, $structure);
-        $structure[$item->entity->id()]['parent'] = $sourceContainer->id();
-      }
-    }
-    $this->_output = $structure;
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function copyEntityStructure(Element $entity, Element $container, &$structure) {
-    if ($entity == NULL) {
-      return $this;
-    }
-    foreach ($entity->children as $item) {
-      if ($item->entity != NULL) {
-        $this->copyEntityStructure($item->entity, $container, $structure);
-        if ($item->entity->hasField('field_styles') && !empty($item->entity->field_styles)) {
-          foreach ($item->entity->field_styles as $style) {
-            if ($style->entity != NULL) {
-              $this->copyEntityStructure($style->entity, $container, $structure);
-              $structure[$style->entity->id()]['parent'] = $item->entity->id();
-              $structure[$style->entity->id()]['reference_field'] = 'field_styles';
-            }
-          }
-        }
-        $structure[$item->entity->id()]['parent'] = $entity->id();
-      }
-    }
-    $structure[$entity->id()] = [];
-    $structure[$entity->id()]['langcode'] = $entity->langcode->value;
-    $structure[$entity->id()]['entity'] = NULL;
-    if ($container != NULL) {
-      $structure[$entity->id()]['langcode'] = $container->langcode->value;
-      $structure[$entity->id()]['entity'] = $container->entity->target_id;
-    }
-    return $this;
-  }
-
-  /**
    * {@inheritDoc}
    */
   public function copyContainer(Element $sourceContainer, Element $targetContainer, $clear = FALSE) {
@@ -153,7 +26,6 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
 
     $this->copyContainerStructure($sourceContainer, $targetContainer);
     $structureCopy = $this->_output;
-    $this->_output = $structureCopy;
 
     $batch = [
       'title' => 'Processing Pagedesigner content',
@@ -238,6 +110,133 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
+   * @param \Drupal\pagedesigner\Entity\Element $entity
+   *   The entity to copy.
+   * @param \Drupal\pagedesigner\Entity\Element $container
+   *   The container its belong to.
+   * @param $data
+   *   The data to copy.
+   *
+   * @return \Drupal\pagedesigner\Entity\Element|void
+   *   The entity to copy or nothing.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  public static function copyReferenceData(Element $entity, Element $container, $data) {
+    if ($entity->id() == $container->id() || !isset($data['parent'])) {
+      return;
+    }
+    $parent = Element::load($data['parent']);
+    if ($parent->hasTranslation($data['langcode'])) {
+      $parent = $parent->getTranslation($data['langcode']);
+    }
+    $entity->parent->entity = $parent;
+    $entity->langcode->value = $data['langcode'];
+    $entity->entity->entity = \Drupal::entityTypeManager()
+      ->getStorage('node')
+      ->load($data['entity']);
+    $entity->save();
+    if ($data['reference_field']) {
+      if ($parent->hasField($data['reference_field'])) {
+        $parent->get($data['reference_field'])->appendItem($entity);
+      }
+    }
+    else {
+      $parent->children->appendItem($entity);
+    }
+    $parent->save();
+    return $entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function copyFromData(Element $entity, Element $container, &$structure) {
+    $clone = $entity->createDuplicate();
+    $clone->setPublished(FALSE);
+    $clone->container->entity = $container;
+    $clone->langcode->value = $entity->langcode->value;
+    if ($entity->id() == $container->id()) {
+      $structure[$entity->id()]['original'] = $entity->id();
+
+      return $container;
+    }
+
+    if ($container != NULL) {
+      $clone->entity->entity = $container->entity->entity;
+      $clone->langcode->value = $container->langcode->value;
+    }
+    else {
+      $clone->entity->entity = NULL;
+    }
+    if ($clone->children) {
+      $clone->children->setValue([]);
+    }
+    if ($clone->hasField('field_styles')) {
+      $clone->field_styles->setValue([]);
+    }
+    $clone->save();
+
+    $structure[$clone->id()] = $structure[$entity->id()];
+    $structure[$clone->id()]['original'] = $entity->id();
+    // Adjust referencing items.
+    foreach ($structure as $key => $item) {
+      if ($item['parent'] == $entity->id()) {
+        $structure[$key]['parent'] = $clone->id();
+      }
+    }
+    unset($structure[$entity->id()]);
+
+    return $clone;
+  }
+
+  public function copyContainerStructure(Element $sourceContainer, Element $targetContainer) {
+    $structure = [];
+    foreach ($sourceContainer->children as $item) {
+      if ($item->entity != NULL) {
+        $this->copyEntityStructure($item->entity, $targetContainer, $structure);
+        $structure[$item->entity->id()]['parent'] = $sourceContainer->id();
+      }
+    }
+    $this->_output = $structure;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function copyEntityStructure(Element $entity, Element $container, &$structure) {
+    if ($entity == NULL) {
+      return $this;
+    }
+    foreach ($entity->children as $item) {
+      if ($item->entity != NULL) {
+        $this->copyEntityStructure($item->entity, $container, $structure);
+        if ($item->entity->hasField('field_styles') && !empty($item->entity->field_styles)) {
+          foreach ($item->entity->field_styles as $style) {
+            if ($style->entity != NULL) {
+              $this->copyEntityStructure($style->entity, $container, $structure);
+              $structure[$style->entity->id()]['parent'] = $item->entity->id();
+              $structure[$style->entity->id()]['reference_field'] = 'field_styles';
+            }
+          }
+        }
+        $structure[$item->entity->id()]['parent'] = $entity->id();
+      }
+    }
+    $structure[$entity->id()] = [];
+    $structure[$entity->id()]['langcode'] = $entity->langcode->value;
+    $structure[$entity->id()]['entity'] = NULL;
+    if ($container != NULL) {
+      $structure[$entity->id()]['langcode'] = $container->langcode->value;
+      $structure[$entity->id()]['entity'] = $container->entity->target_id;
+    }
+    return $this;
+  }
+
+  /**
    * Batch function to remove any previous referenced pagedesigner elements
    *  from the container that is being translated.
    *
@@ -280,7 +279,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       $eventData[] = &$targetContainer;
       \Drupal::service('event_dispatcher')
         ->dispatch(ElementEvents::COPY_BEFORE, new ElementEvent(ElementEvents::COPY_BEFORE, $eventData));
-      $clone = self::copyFromData($entity, $targetContainer, $item, $context['results']['structure']);
+      $clone = self::copyFromData($entity, $targetContainer, $context['results']['structure']);
       $context['results']['structure']['originals'][$entity->id()] = $clone->id();
     }
   }

@@ -1,0 +1,13 @@
+diff --git a/src/Plugin/HandlerPluginBase.php b/src/Plugin/HandlerPluginBase.php
+index c3e99c3..3263f2a 100644
+--- a/src/Plugin/HandlerPluginBase.php
++++ b/src/Plugin/HandlerPluginBase.php
+@@ -131,7 +131,7 @@ abstract class HandlerPluginBase extends PluginBase implements HandlerPluginInte
+     $entity = ($published) ? $entity->loadNewestPublished() : $entity;
+     if ($entity != NULL) {
+       $value = $this->elementHandler->get($entity);
+-      $list[] = $value;
++      $list[(string)$entity->id()] = $value;
+     }
+   }
+ 
