@@ -28,11 +28,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
     $data['pagedesigner_item']['#container_id'] = $field[0]->getValue()['target_id'];
 
     // Get the translation content.
-    $manager = \Drupal::typedDataManager();
-    $data_definition = $manager->createDataDefinition('pagedesigner_item_data');
-    $typed_data = $manager->create($data_definition, $field[0]);
-    $translationContent = $typed_data->getContent($field[0]->getValue()['target_id'], $language, FALSE);
-
+    $translationContent = $field[0]->getContent($field[0]->getValue()['target_id'], $language, FALSE);
     foreach ($translationContent as $key => $value) {
 
       // Set the content translation info.
@@ -93,14 +89,12 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
         $sourceContainer = $container->getTranslation(self::$sourceLanguage);
       }
       if (!$container->hasTranslation($language)) {
-        $targetContainer = $container->addTranslation($language);
-        $targetContainer->set('user_id', 1);
-        $targetContainer->save();
+        $container->addTranslation($language)->save();
       }
       $targetContainer = $container->getTranslation($language);
       if ($sourceContainer != NULL && $targetContainer != NULL) {
-        $batch = \Drupal::service('pagedesigner_content.state_changer')
-          ->copyContainer($sourceContainer, $targetContainer, $field_data, TRUE);
+        $batch = \Drupal::service('pagedesigner.service.statechanger')
+          ->copyContainer($sourceContainer, $targetContainer, TRUE);
         $store = \Drupal::service('tempstore.shared')
           ->get('pagedesigner.tmgmt_data');
         if (!$store->get('deepl_translator_auto_accept')) {
