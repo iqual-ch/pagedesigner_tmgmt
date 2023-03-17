@@ -81,6 +81,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     if ($clone->hasField('field_styles')) {
       $clone->field_styles->setValue([]);
     }
+    // If there is translation data for the field property, save it.
     $clone->save();
 
     $structure[$clone->id()] = $structure[$entity->id()];
@@ -96,16 +97,47 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     return $clone;
   }
 
+  public function copyContainerStructure(Element $sourceContainer, Element $targetContainer) {
+    $structure = [];
+    foreach ($sourceContainer->children as $item) {
+      if ($item->entity != NULL) {
+        $this->copyEntityStructure($item->entity, $targetContainer, $structure);
+        $structure[$item->entity->id()]['parent'] = $sourceContainer->id();
+      }
+    }
+    $this->_output = $structure;
+    return $this;
+  }
+
   /**
    * {@inheritdoc}
    */
-  public function copyStructure(Element $entity, Element $container = NULL) {
+  public function copyEntityStructure(Element $entity, Element $container, &$structure) {
     if ($entity == NULL) {
       return $this;
     }
-    $structure = [];
-    $this->getHandler()->copyStructure($entity, $container, $structure);
-    $this->_output = $structure;
+    foreach ($entity->children as $item) {
+      if ($item->entity != NULL) {
+        $this->copyEntityStructure($item->entity, $container, $structure);
+        if ($item->entity->hasField('field_styles') && !empty($item->entity->field_styles)) {
+          foreach ($item->entity->field_styles as $style) {
+            if ($style->entity != NULL) {
+              $this->copyEntityStructure($style->entity, $container, $structure);
+              $structure[$style->entity->id()]['parent'] = $item->entity->id();
+              $structure[$style->entity->id()]['reference_field'] = 'field_styles';
+            }
+          }
+        }
+        $structure[$item->entity->id()]['parent'] = $entity->id();
+      }
+    }
+    $structure[$entity->id()] = [];
+    $structure[$entity->id()]['langcode'] = $entity->langcode->value;
+    $structure[$entity->id()]['entity'] = NULL;
+    if ($container != NULL) {
+      $structure[$entity->id()]['langcode'] = $container->langcode->value;
+      $structure[$entity->id()]['entity'] = $container->entity->target_id;
+    }
     return $this;
   }
 
@@ -120,14 +152,8 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       return $this;
     }
 
-    $this->copyStructure($sourceContainer, $targetContainer);
+    $this->copyContainerStructure($sourceContainer, $targetContainer);
     $structureCopy = $this->_output;
-    foreach ($this->_output as $key => $value) {
-      if ($value['parent'] == $sourceContainer->id()) {
-        $structureCopy[$key]['parent'] = $targetContainer->id();
-      }
-    }
-    $this->_output = $structureCopy;
 
     $batch = [
       'title' => 'Processing Pagedesigner content',
@@ -142,7 +168,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
         if ($item->entity != NULL) {
           $arg_array = [$item->entity, $clear];
           $operations[] = [
-            '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTself::deleteEntityBatch',
+            '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::deleteEntityBatch',
             $arg_array,
           ];
           if ($targetContainer->children) {
@@ -162,9 +188,9 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       $j++;
       $fifty_array[$key] = $item;
       if ($j == 50) {
-        $arg_array2 = [$fifty_array, $targetContainer, &$structureCopy];
+        $arg_array2 = [$fifty_array, $targetContainer, $translationData, &$structureCopy];
         $operations[] = [
-          '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTself::copyFromDataBatch',
+          '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyFromDataBatch',
           $arg_array2,
         ];
         $j = 0;
@@ -172,9 +198,9 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       }
     }
     if ($j > 0) {
-      $arg_array2 = [$fifty_array, $targetContainer, &$structureCopy];
+      $arg_array2 = [$fifty_array, $targetContainer, $translationData, &$structureCopy];
       $operations[] = [
-        '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTself::copyFromDataBatch',
+        '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyFromDataBatch',
         $arg_array2,
       ];
       $j = 0;
@@ -187,7 +213,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       if ($j == 50) {
         $arg_array2 = [$fifty_array, $targetContainer];
         $operations[] = [
-          '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTself::copyReferenceDataBatch',
+          '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyReferenceDataBatch',
           $arg_array2,
         ];
         $j = 0;
@@ -197,13 +223,13 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     if ($j > 0) {
       $arg_array2 = [$fifty_array, $targetContainer];
       $operations[] = [
-        '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTself::copyReferenceDataBatch',
+        '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyReferenceDataBatch',
         $arg_array2,
       ];
     }
 
     $operations[] = [
-      '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTself::beforeBatchFinished',
+      '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::beforeBatchFinished',
       [$targetContainer],
     ];
     $batch['operations'] = $operations;
@@ -243,7 +269,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
    * @param $context
    *   Batch processing context.
    */
-  public static function copyFromDataBatch($fifty_array, $targetContainer, &$structureCopy, &$context) {
+  public static function copyFromDataBatch($fifty_array, $targetContainer, $data, &$structureCopy, &$context) {
     foreach ($fifty_array as $key => $item) {
       if (!isset($context['results']['structure'])) {
         $context['results']['structure'] = $structureCopy;
@@ -254,7 +280,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       $eventData[] = &$targetContainer;
       \Drupal::service('event_dispatcher')
         ->dispatch(ElementEvents::COPY_BEFORE, new ElementEvent(ElementEvents::COPY_BEFORE, $eventData));
-      $clone = self::copyFromData($entity, $targetContainer, $item, $context['results']['structure']);
+      $clone = self::copyFromData($entity, $targetContainer, $data, $context['results']['structure']);
       $context['results']['structure']['originals'][$entity->id()] = $clone->id();
     }
   }

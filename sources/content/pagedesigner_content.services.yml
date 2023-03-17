@@ -1,6 +1,4 @@
 services:
-  # Name of this service.
   pagedesigner_content.state_changer:
-    # Event subscriber class that will listen for the events.
     class: '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger'
     arguments: ['@language_manager', '@pagedesigner.service.element_handler']

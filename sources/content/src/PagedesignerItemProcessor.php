@@ -93,7 +93,9 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
         $sourceContainer = $container->getTranslation(self::$sourceLanguage);
       }
       if (!$container->hasTranslation($language)) {
-        $container->addTranslation($language)->save();
+        $targetContainer = $container->addTranslation($language);
+        $targetContainer->set('user_id', 1);
+        $targetContainer->save();
       }
       $targetContainer = $container->getTranslation($language);
       if ($sourceContainer != NULL && $targetContainer != NULL) {

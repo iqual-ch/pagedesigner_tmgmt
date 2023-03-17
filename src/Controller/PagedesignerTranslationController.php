@@ -106,7 +106,7 @@ class PagedesignerTranslationController extends ControllerBase {
     $store = \Drupal::service('tempstore.shared')
       ->get('pagedesigner.tmgmt_data');
     $job_items = $store->get('deepl_tmgmt_job_items');
-    if (count($job_items) == 1) {
+    if ($job_items && count($job_items) == 1) {
       $job_id = $store->get('deepl_job_id');
       return new RedirectResponse('/admin/tmgmt/jobs/' . $job_id);
     }
