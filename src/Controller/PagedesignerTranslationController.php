@@ -26,12 +26,14 @@ class PagedesignerTranslationController extends ControllerBase {
     $plugin->saveTranslation($job_item, $job_item->getJob()
       ->getTargetLangcode());
     $data = $job_item->getData();
-    $store = \Drupal::service('user.shared_tempstore')
+    $store = \Drupal::service('tempstore.shared')
       ->get('pagedesigner.tmgmt_data');
+
+    /** @var \Drupal\tmgmt\Entity\JobItem $entity */
     $entity = \Drupal::entityTypeManager()
       ->getStorage($job_item->getItemType())
       ->load($job_item->getItemId());
-    if (!isset($entity) || $entity == NULL) {
+    if ($entity == NULL) {
       $job_id = $store->get('deepl_job_id');
       return new RedirectResponse('/admin/tmgmt/jobs/' . $job_id);
     }
@@ -91,20 +93,20 @@ class PagedesignerTranslationController extends ControllerBase {
   /**
    * Batch function to handle the redirect after the translation.
    *
-   * @param $success
+   * @param bool $success
    *   Indicates whether the batch was successful.
-   * @param $results
+   * @param array $results
    *   Context for passing parameters from the batch processing.
-   * @param $operations
+   * @param array $operations
    *   The operations from the batch processing.
    *
    * @return \Symfony\Component\HttpFoundation\RedirectResponse
    */
-  public static function batchFinished($success, $results, $operations) {
-    $store = \Drupal::service('user.shared_tempstore')
+  public static function batchFinished(bool $success, array $results, array $operations) {
+    $store = \Drupal::service('tempstore.shared')
       ->get('pagedesigner.tmgmt_data');
     $job_items = $store->get('deepl_tmgmt_job_items');
-    if (count($job_items) == 1) {
+    if ($job_items && count($job_items) == 1) {
       $job_id = $store->get('deepl_job_id');
       return new RedirectResponse('/admin/tmgmt/jobs/' . $job_id);
     }
