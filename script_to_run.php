@@ -1,13 +1,20 @@
 <?php
 
-use \Drupal\pagedesigner\Entity\Element;
+/**
+ * @file
+ */
+
+use Drupal\pagedesigner\Entity\Element;
+
 $store = \Drupal::service('user.shared_tempstore')->get('pagedesigner.tmgmt_data');
-$store->set(70760, ['pagedesigner_item' => ['70764' => ['#translate' => true, '#translation' =>['#text' => 'Now we are testing.']]]]);
+$store->set(70760, ['pagedesigner_item' => ['70764' => ['#translate' => TRUE, '#translation' => ['#text' => 'Now we are testing.']]]]);
 $container = Element::load(70760);
-if (!$container->hasTranslation('en'))
+if (!$container->hasTranslation('en')) {
   $targetContainer = $container->addTranslation('en');
-else
+}
+else {
   $targetContainer = $container->getTranslation('en');
+}
 $structure = \Drupal::service('pagedesigner.service.statechanger')->copyContainer($container, $targetContainer, [])->getOutput();
 die();
 $pids = [];
@@ -22,26 +29,27 @@ $count = 0;
 
 foreach ($elements as $element) {
   $toDelete = [];
-  //var_dump($element->field_pattern_value);
-
+  // var_dump($element->field_pattern_value);.
   if (!empty($element->field_pattern_value) && !empty($patterns[$element->field_pattern_value])) {
     $pattern = $patterns[$element->field_pattern_value];
-    if (count($pattern->getFields()) < $element->fieldCount) {
+    if ((is_countable($pattern->getFields()) ? count($pattern->getFields()) : 0) < $element->fieldCount) {
       $entity = Element::load($element->id);
       $i = 0;
       foreach ($entity->children as $delta => $item) {
-        if ($item->entity == null) {
-          //$i++;
+        if ($item->entity == NULL) {
+          // $i++;
           continue;
         }
         if (!$item->entity->hasField('field_placeholder')) {
           $toDelete[$item->entity->id()] = $item->entity;
           echo 'delete child ' . $item->entity->id() . "\n";
-        } else if (!$pattern->hasField($item->entity->field_placeholder->value)) {
+        }
+        elseif (!$pattern->hasField($item->entity->field_placeholder->value)) {
           $toDelete[$item->entity->id()] = $item->entity;
           echo 'unknown field ' . $item->entity->field_placeholder->value . ' on ' . $item->entity->id() . "\n";
-        } else {
-          $foundDuplicate = false;
+        }
+        else {
+          $foundDuplicate = FALSE;
           $attach = [];
           foreach ($entity->children as $deltaInner => $itemInner) {
             if ($item->entity->id() == $itemInner->entity->id()) {
@@ -56,73 +64,69 @@ foreach ($elements as $element) {
               $toDelete[$item->entity->id()] = $item->entity;
               echo 'duplicate field on ' . $item->entity->id() . "\n";
               break;
-            } else {
+            }
+            else {
               $attach[] = $item->entity->id();
             }
           }
           /*$entity->children->setValue($attach);
           $entity->save();*/
           if (!$foundDuplicate) {
-            // echo 'something else on ' . $item->entity->id() . "\n";
+            // Echo 'something else on ' . $item->entity->id() . "\n";.
           }
         }
         $i++;
       }
 
-      if (!$entity->entity->isEmpty() && $entity->entity->entity != null && $entity->entity->entity->getType() != 'campaign_landingpage' && !in_array($pattern->id(), ['img']) && count($pattern->getFields()) != count($entity->children) - count($toDelete)) {
+      if (!$entity->entity->isEmpty() && $entity->entity->entity != NULL && $entity->entity->entity->getType() != 'campaign_landingpage' && !in_array($pattern->id(), ['img']) && (is_countable($pattern->getFields()) ? count($pattern->getFields()) : 0) != (is_countable($entity->children) ? count($entity->children) : 0) - count($toDelete)) {
         echo 'Error: Deleting too many fields on ' . $entity->id() . ' with pattern ' . $pattern->id() . "\n";
-        echo 'Target: ' . count($pattern->getFields()) . "\n";
-        echo 'Current: ' . count($entity->children) . "\n";
-        echo 'Deleting: ' . count($toDelete) . ' - ' . print_r(array_keys($toDelete), true) . "\n";
-        echo 'Result: ' . (count($entity->children) - count($toDelete)) . "\n";
+        echo 'Target: ' . (is_countable($pattern->getFields()) ? count($pattern->getFields()) : 0) . "\n";
+        echo 'Current: ' . (is_countable($entity->children) ? count($entity->children) : 0) . "\n";
+        echo 'Deleting: ' . count($toDelete) . ' - ' . print_r(array_keys($toDelete), TRUE) . "\n";
+        echo 'Result: ' . ((is_countable($entity->children) ? count($entity->children) : 0) - count($toDelete)) . "\n";
         break;
-      } else {
+      }
+      else {
         echo 'Deleting ' . count($toDelete) . ' fields on ' . $entity->id() . "\n";
         foreach ($toDelete as $item) {
           echo "deleting " . $item->id() . "\n";
-          //$item->delete();
+          // $item->delete();
         }
-        //\Drupal::entityTypeManager()->getStorage('pagedesigner_element')->load($entity->id())->save();
-        //$entity->save();
+        // \Drupal::entityTypeManager()->getStorage('pagedesigner_element')->load($entity->id())->save();
+        // $entity->save();
       }
     }
   }
 }
 die();
 // $pids = \Drupal::database()->query("SELECT id FROM `pagedesigner_element_field_data` WHERE entity = 22722 AND id in (select children_target_id FROM pagedesigner_element__children) AND `deleted` = 1 ORDER BY `pagedesigner_element_field_data`.`id` ASC")->fetchAll();
-
-// echo count($pids) . "\n";
-
-// do {
+// Echo count($pids) . "\n";
+// Do {
 //     $invariant = count($pids);
-
-//     $pids = \Drupal::database()->query("SELECT id FROM `pagedesigner_element_field_data` WHERE id in (select children_target_id FROM pagedesigner_element__children c JOIN pagedesigner_element_field_data d ON c.entity_id = d.id AND COALESCE(d.deleted, 0) = 0) AND `type` NOT like 'style' and `type` not like 'container' AND type not like 'layout' and type not like 'gallery_gallery' ORDER BY `pagedesigner_element_field_data`.`id` ASC")->fetchAll();
+// $pids = \Drupal::database()->query("SELECT id FROM `pagedesigner_element_field_data` WHERE id in (select children_target_id FROM pagedesigner_element__children c JOIN pagedesigner_element_field_data d ON c.entity_id = d.id AND COALESCE(d.deleted, 0) = 0) AND `type` NOT like 'style' and `type` not like 'container' AND type not like 'layout' and type not like 'gallery_gallery' ORDER BY `pagedesigner_element_field_data`.`id` ASC")->fetchAll();
 //     echo 'restoring ' . count($pids) . ' elements ' . "\n";
-
-//     foreach ($pids as $pid) {
+// foreach ($pids as $pid) {
 //         $element = Element::load($pid->id);
 //         $element->deleted = 0;
 //         $element->save();
 //         // $element->delete();
 //     }
-
 // } while (count($pids) > 0 && $invariant != count($pids));
-
 // die();
-$invariant = count($pids);
+$invariant = is_countable($pids) ? count($pids) : 0;
 $sum = 0;
 
 $pids = \Drupal::database()->query("SELECT id FROM `pagedesigner_element_field_data` WHERE id NOT in (select children_target_id FROM pagedesigner_element__children c JOIN pagedesigner_element_field_data d ON c.entity_id = d.id AND COALESCE(d.deleted, 0) = 0) AND `type` NOT like 'style' and `type` not like 'container' AND type not like 'layout' and type not like 'gallery_gallery' ORDER BY `pagedesigner_element_field_data`.`id` ASC")->fetchAll();
 
 do {
-  $sum += count($pids);
-  echo 'cleaning ' . count($pids) . ' elements ' . "\n";
+  $sum += is_countable($pids) ? count($pids) : 0;
+  echo 'cleaning ' . (is_countable($pids) ? count($pids) : 0) . ' elements ' . "\n";
   $parents = [];
   foreach ($pids as $pid) {
     $parents[] = $pid->id;
   }
 
-  $selection = \rand(0, count($pids));
+  $selection = random_int(0, is_countable($pids) ? count($pids) : 0);
   $element = Element::load($pids[$selection]->id);
   $node = $element->entity->entity;
   $entity_type = 'node';
@@ -131,7 +135,7 @@ do {
   $render_controller = \Drupal::entityTypeManager()->getViewBuilder($node->getEntityTypeId());
   $render_output = $render_controller->view($node, $view_mode, $element->language()->getId());
   print_r($render_output);
-  if (stripos($render_output, $pids[$selection]->id) != false) {
+  if (stripos($render_output, (string) $pids[$selection]->id) != FALSE) {
     echo 'found element in render output' . "\n";
     exit(0);
   }
@@ -142,40 +146,33 @@ do {
     ]
   )->fetchAll();
 
-  // foreach ($pids as $pid) {
+  // Foreach ($pids as $pid) {
   //     $element = Element::load($pid->id);
   //     $element->deleted = 1;
   //     $element->save();
   //     // $element->delete();
   // }
-
 } while (count($pids) > 0 && $invariant != count($pids));
 
 echo 'total ' . $sum . "\n";
 
-// do {
+// Do {
 //     $invariant = count($pids);
-
-//     $pids = \Drupal::database()->query("SELECT id FROM `pagedesigner_element` WHERE id not in (select field_styles_target_id FROM pagedesigner_element__field_styles s JOIN pagedesigner_element_field_data d ON s.entity_id = d.id AND COALESCE(d.deleted, 0) != 1 GROUP BY children_target_id) AND `type` like 'style' ORDER BY `pagedesigner_element`.`id` ASC")->fetchAll();
+// $pids = \Drupal::database()->query("SELECT id FROM `pagedesigner_element` WHERE id not in (select field_styles_target_id FROM pagedesigner_element__field_styles s JOIN pagedesigner_element_field_data d ON s.entity_id = d.id AND COALESCE(d.deleted, 0) != 1 GROUP BY children_target_id) AND `type` like 'style' ORDER BY `pagedesigner_element`.`id` ASC")->fetchAll();
 //     echo 'cleaning ' . count($pids) . ' styles ' . "\n";
 //     foreach ($pids as $pid) {
 //         $element = Element::load($pid->id);
 //         $element->deleted = 1;
 //         $element->save();
-
-//         // $element->delete();
+// // $element->delete();
 //     }
-
 // } while (count($pids) > 0 && $invariant != count($pids));
-
 // $layouts = \Drupal::database()->query("SELECT id FROM `pagedesigner_element_field_data` WHERE type like 'layout' and `deleted` is NULL")->fetchAll();
-
-// foreach ($layouts as $layout) {
+// Foreach ($layouts as $layout) {
 //     $element = Element::load($layout->id);
 //     clearEntity($element);
 // }
-
-// function clearEntity($element)
+// Function clearEntity($element)
 // {
 //     if ($element->entity->entity) {
 //         $element->entity->entity = null;
@@ -189,4 +186,4 @@ echo 'total ' . $sum . "\n";
 //             clearEntity($item->entity);
 //         }
 //     }
-// }
+// }.

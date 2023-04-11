@@ -192,6 +192,9 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     return $clone;
   }
 
+  /**
+   *
+   */
   public function copyContainerStructure(Element $sourceContainer, Element $targetContainer) {
     $structure = [];
     foreach ($sourceContainer->children as $item) {

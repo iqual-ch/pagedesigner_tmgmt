@@ -23,6 +23,7 @@ class AcceptForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, Request $request = NULL) {
+    $build = [];
     $user = \Drupal::currentUser();
     $page = \Drupal::entityTypeManager()->getStorage('node')->load($_GET['nid']);
     if (isset($page) && $page) {
