@@ -14,7 +14,8 @@
   "license": "GPL-2.0+",
   "require": {
     "drupal/pagedesigner": "^2.0",
-    "drupal/tmgmt": "^1.0"
+    "drupal/tmgmt": "^1.0",
+    "drupal/hook_post_action": "^1.2"
   },
   "extra": {
     "patches": {
