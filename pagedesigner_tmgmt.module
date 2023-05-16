@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\pagedesigner_tmgmt\PagedesignerItemProcessor;
+
+/**
+ * Implements hook_field_info_alter().
+ */
+function pagedesigner_tmgmt_field_info_alter(&$info) {
+  if (isset($info['pagedesigner_item'])) {
+    $info['pagedesigner_item']['tmgmt_field_processor'] = PagedesignerItemProcessor::class;
+  }
+}
