@@ -24,7 +24,7 @@
         "#3348718: Use entity Id as key in content array of pagedesigner element": "https://www.drupal.org/files/issues/2023-03-17/3348718_refactor_content_array_for_tmgmt.patch"
       },
       "drupal/tmgmt_deepl": {
-        "Make tmgmt_deepl compatible with PHP7.3": "https://github.com/iqual-ch/pagedesigner_tmgmt/blob/issue/US-349_cleanup/patches/tmgmt_deepl_php7-3_compatibility.diff"
+        "Make tmgmt_deepl compatible with PHP7.3": "https://raw.githubusercontent.com/iqual-ch/pagedesigner_tmgmt/issue/US-349_cleanup/patches/tmgmt_deepl_php7-3_compatibility.diff"
       }
     }
   }
