@@ -16,7 +16,7 @@
     "drupal/pagedesigner": "^2.0",
     "drupal/tmgmt": "^1.0",
     "drupal/tmgmt_deepl": "^2.1",
-    "drupal/hook_post_action": "^1.2",
+    "drupal/hook_post_action": "^1.2"
   },
   "extra": {
     "patches": {
