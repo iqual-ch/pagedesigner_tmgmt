@@ -15,7 +15,12 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface {
 
-  public $translation_data = NULL;
+  /**
+   * The translation data.
+   *
+   * @var array
+   */
+  public $translationData = NULL;
 
   /**
    * {@inheritdoc}
@@ -41,11 +46,11 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
     $container = $event->getData()[1];
     $handler = \Drupal::service('pagedesigner.service.element_handler');
     $store = \Drupal::service('tempstore.shared')->get('pagedesigner.tmgmt_data');
-    $this->translation_data = $store->get($container->id());
+    $this->translationData = $store->get($container->id());
 
     // Check for translation data.
-    if (isset($this->translation_data['pagedesigner_item'][$entity->id()])) {
-      $itemData = $this->translation_data['pagedesigner_item'][$entity->id()];
+    if (isset($this->translationData['pagedesigner_item'][$entity->id()])) {
+      $itemData = $this->translationData['pagedesigner_item'][$entity->id()];
       if ($itemData['#translate'] && isset($itemData['#translation']) && isset($itemData['#translation']["#text"])) {
 
         $translatedText = $itemData['#translation']["#text"];

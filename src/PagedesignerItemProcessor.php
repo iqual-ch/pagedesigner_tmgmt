@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\pagedesigner_content;
+namespace Drupal\pagedesigner_tmgmt;
 
 use Drupal\pagedesigner\Entity\Element;
 use Drupal\Core\Field\FieldItemListInterface;
@@ -11,8 +11,18 @@ use Drupal\tmgmt_content\DefaultFieldProcessor;
  */
 class PagedesignerItemProcessor extends DefaultFieldProcessor {
 
+  /**
+   * The source language.
+   *
+   * @var string
+   */
   public static $sourceLanguage = NULL;
 
+  /**
+   * The translation data.
+   *
+   * @var array
+   */
   public static $translationData = NULL;
 
   /**
@@ -97,17 +107,15 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
       }
       $targetContainer = $container->getTranslation($language);
       if ($sourceContainer != NULL && $targetContainer != NULL) {
-        $batch = \Drupal::service('pagedesigner_content.state_changer')
+        $batch = \Drupal::service('pagedesigner_tmgmt.state_changer')
           ->copyContainer($sourceContainer, $targetContainer, TRUE);
         $store = \Drupal::service('tempstore.shared')
           ->get('pagedesigner.tmgmt_data');
         if (!$store->get('deepl_translator_auto_accept')) {
           batch_set($batch);
         }
-
         return $batch;
       }
-      return;
     }
   }
 

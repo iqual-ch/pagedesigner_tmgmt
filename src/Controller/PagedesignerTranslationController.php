@@ -4,7 +4,7 @@ namespace Drupal\pagedesigner_tmgmt\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Element;
-use Drupal\pagedesigner_content\PagedesignerItemProcessor;
+use Drupal\pagedesigner_tmgmt\PagedesignerItemProcessor;
 use Drupal\tmgmt\Entity\JobItem;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 

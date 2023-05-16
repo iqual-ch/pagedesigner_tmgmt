@@ -1,4 +1,0 @@
-services:
-  pagedesigner_content.state_changer:
-    class: '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger'
-    arguments: ['@language_manager', '@pagedesigner.service.element_handler']
