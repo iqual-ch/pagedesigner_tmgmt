@@ -16,12 +16,15 @@
     "drupal/pagedesigner": "^2.0",
     "drupal/tmgmt": "^1.0",
     "drupal/tmgmt_deepl": "^2.1",
-    "drupal/hook_post_action": "^1.2"
+    "drupal/hook_post_action": "^1.2",
   },
   "extra": {
     "patches": {
       "drupal/pagedesigner": {
-        "Use entity Id as key in content array of pagedesigner element": "https://www.drupal.org/files/issues/2023-03-17/3348718_refactor_content_array_for_tmgmt.patch"
+        "#3348718: Use entity Id as key in content array of pagedesigner element": "https://www.drupal.org/files/issues/2023-03-17/3348718_refactor_content_array_for_tmgmt.patch"
+      },
+      "drupal/tmgmt_deepl": {
+        "Make tmgmt_deepl compatible with PHP7.3": "https://www.drupal.org/files/issues/2023-03-17/3348718_refactor_content_array_for_tmgmt.patch"
       }
     }
   }
