@@ -2,6 +2,7 @@
 
 namespace Drupal\pagedesigner_content\Service;
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\pagedesigner\ElementEvents;
 use Drupal\pagedesigner\Entity\Element;
 use Drupal\pagedesigner\Event\ElementEvent;
@@ -110,11 +111,13 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
+   * Copy Reference Data.
+   *
    * @param \Drupal\pagedesigner\Entity\Element $entity
    *   The entity to copy.
    * @param \Drupal\pagedesigner\Entity\Element $container
    *   The container its belong to.
-   * @param $data
+   * @param mixed $data
    *   The data to copy.
    *
    * @return \Drupal\pagedesigner\Entity\Element|void
@@ -193,7 +196,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   *
+   * Copy Container Structure.
    */
   public function copyContainerStructure(Element $sourceContainer, Element $targetContainer) {
     $structure = [];
@@ -240,18 +243,20 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * Batch function to remove any previous referenced pagedesigner elements
-   *  from the container that is being translated.
+   * Delete Entity Batch.
    *
-   * @param $entity
+   * Batch function to remove any previous referenced pagedesigner elements
+   * from the container that is being translated.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The pagedesigner element that is being deleted.
-   * @param $clear
+   * @param bool $clear
    *   Flag to indicate whether the element should be deleted or not.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public static function deleteEntityBatch($entity, $clear) {
+  public static function deleteEntityBatch(EntityInterface $entity, bool $clear) {
     \Drupal::service('pagedesigner.service.element_handler')
       ->delete($entity, $clear);
     \Drupal::entityTypeManager()
@@ -260,7 +265,9 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * @param $fifty_array
+   * Copy From Data Batch.
+   *
+   * @param array $fifty_array
    *   The array of pagedesigner elements.
    * @param $targetContainer
    *   The target container to which the elements need to be copied.
@@ -271,7 +278,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
    * @param $context
    *   Batch processing context.
    */
-  public static function copyFromDataBatch($fifty_array, $targetContainer, &$structureCopy, &$context) {
+  public static function copyFromDataBatch(array $fifty_array, $targetContainer, &$structureCopy, &$context) {
     foreach ($fifty_array as $key => $item) {
       if (!isset($context['results']['structure'])) {
         $context['results']['structure'] = $structureCopy;
