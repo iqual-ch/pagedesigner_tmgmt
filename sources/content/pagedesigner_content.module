@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * The Pagedesigner Content module's .module file.
  */
 
 use Drupal\Core\Entity\EntityInterface;
@@ -43,7 +44,7 @@ function pagedesigner_content_form_node_form_alter(&$form, FormStateInterface $f
       $title = '/admin/tmgmt/sources/content/node?title=' . $form_state->getFormObject()->getEntity()->getUntranslated()->getTitle() . '&type=page';
       $form['retranslate'] = [
         '#type' => 'markup',
-        '#markup' => t('<p>To overwrite the translate, go to <a href=" ' . $title . '">Content overview</a> and request translation. </p>'),
+        '#markup' => t('<p>To overwrite the translate, go to <a href="@title">Content overview</a> and request translation. </p>', ['@title' => $title]),
         '#weight' => 10,
       ];
       return;
@@ -118,7 +119,7 @@ function pagedesigner_content_form_node_form_submit(&$form, FormStateInterface $
 }
 
 /**
- *
+ * Pagedesigner Content Process Translation.
  */
 function pagedesigner_content_process_translation($job) {
   try {
@@ -137,7 +138,7 @@ function pagedesigner_content_process_translation($job) {
 }
 
 /**
- *
+ * Pagedesigner Content Finished Translation.
  */
 function pagedesigner_content_finished_translation() {
   \Drupal::messenger()->addStatus('Copied pagedesigner item.');
@@ -160,10 +161,12 @@ function pagedesigner_content_form_tmgmt_job_edit_form_alter(&$form, FormStateIn
   $letters = strlen(preg_replace('![^a-z]+!', '', strtolower($text)));
   $price = $letters * 0.00002;
 
-  /*$form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#header']['letters'] = t('Letters');
-  $form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#header']['price'] = t('Price');
-  $form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#options']['letters'] = $letters;
-  $form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#options']['price'] = $price;*/
+  /*
+   * $form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#header']['letters'] = t('Letters');
+   * $form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#header']['price'] = t('Price');
+   * $form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#options']['letters'] = $letters;
+   * $form['job_items_wrapper']['suggestions']['container']['suggestions_list']['suggestions_table']['#options']['price'] = $price;
+   */
   $form['info']['letter_count'] = [
     '#type' => 'item',
     '#title' => t('Total letters'),
@@ -244,7 +247,7 @@ function pagedesigner_content_form_tmgmt_content_translate_form_alter(&$form, Fo
 }
 
 /**
- *
+ * Pagedesigner Content Submit Translations.
  */
 function pagedesigner_content_submit_translations(&$form, FormStateInterface $form_state) {
   $entity = $form_state->get('entity');
@@ -254,7 +257,12 @@ function pagedesigner_content_submit_translations(&$form, FormStateInterface $fo
   foreach (array_keys(array_filter($values['languages'])) as $langcode) {
     // Create the job object.
     try {
-      $operations[] = ['pagedesigner_tmgmt_job_create_batch', [$entity, $langcode]];
+      $operations[] = [
+        'pagedesigner_tmgmt_job_create_batch', [
+          $entity,
+          $langcode,
+        ],
+      ];
 
       // $operations[] = ['pagedesigner_content_process_translation', [$job]];
     }
@@ -272,7 +280,7 @@ function pagedesigner_content_submit_translations(&$form, FormStateInterface $fo
 }
 
 /**
- *
+ * Pagedesigner Tmgmt Job Create Batch.
  */
 function pagedesigner_tmgmt_job_create_batch($entity, $langcode) {
   $menu_link_manager = \Drupal::service('plugin.manager.menu.link');
@@ -299,7 +307,7 @@ function pagedesigner_content_form_node_edit_form_alter(&$form, FormStateInterfa
     $title = '/admin/tmgmt/sources/content/node?title=' . $form_state->getFormObject()->getEntity()->getUntranslated()->getTitle() . '&type=page';
     $form['retranslate'] = [
       '#type' => 'markup',
-      '#markup' => t('<p>To overwrite the translate, go to <a href=" ' . $title . '">Content overview</a> and request translation. </p>'),
+      '#markup' => t('<p>To overwrite the translate, go to <a href="@title">Content overview</a> and request translation. </p>', ['@title' => $title]),
       '#weight' => 10,
     ];
   }
@@ -352,7 +360,7 @@ function pagedesigner_content_tmgmt_source_suggestions(array $items, JobInterfac
 }
 
 /**
- *
+ * Count Chars Recursively.
  */
 function count_chars_recursively($data) {
   if (is_array($data)) {
@@ -360,7 +368,7 @@ function count_chars_recursively($data) {
       return $data['#text'];
     }
     $result = "";
-    foreach ($data as $key => $value) {
+    foreach ($data as $value) {
       $result .= count_chars_recursively($value);
     }
     return $result;
