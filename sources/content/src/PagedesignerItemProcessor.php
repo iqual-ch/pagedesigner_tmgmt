@@ -11,8 +11,18 @@ use Drupal\tmgmt_content\DefaultFieldProcessor;
  */
 class PagedesignerItemProcessor extends DefaultFieldProcessor {
 
+  /**
+   * The Source Language.
+   *
+   * @var mixed
+   */
   public static $sourceLanguage = NULL;
 
+  /**
+   * The translation data.
+   *
+   * @var mixed
+   */
   public static $translationData = NULL;
 
   /**
