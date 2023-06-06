@@ -41,9 +41,12 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
    *   Pagedesigner copy event.
    */
   public function pagedesignerItemCopy(ElementEvent $event) {
+    $container = $event->getData()[1];
+    if (empty($container)) {
+      return;
+    }
     $clone = $event->getData()[2];
     $entity = $event->getData()[0];
-    $container = $event->getData()[1];
     $handler = \Drupal::service('pagedesigner.service.element_handler');
     $store = \Drupal::service('tempstore.shared')->get('pagedesigner.tmgmt_data');
     $this->translationData = $store->get($container->id());
