@@ -1,0 +1,77 @@
+diff --git a/src/Plugin/tmgmt/Translator/DeeplFreeTranslator.php b/src/Plugin/tmgmt/Translator/DeeplFreeTranslator.php
+index 1c65990..620a60b 100755
+--- a/src/Plugin/tmgmt/Translator/DeeplFreeTranslator.php
++++ b/src/Plugin/tmgmt/Translator/DeeplFreeTranslator.php
+@@ -20,13 +20,13 @@ class DeeplFreeTranslator extends DeeplTranslator {
+    *
+    * @var string
+    */
+-  protected string $translatorUrl = 'https://api-free.deepl.com/v2/translate';
++  protected $translatorUrl = 'https://api-free.deepl.com/v2/translate';
+ 
+   /**
+    * Translation usage service URL.
+    *
+    * @var string
+    */
+-  protected string $translatorUsageUrl = 'https://api-free.deepl.com/v2/usage';
++  protected $translatorUsageUrl = 'https://api-free.deepl.com/v2/usage';
+ 
+ }
+diff --git a/src/Plugin/tmgmt/Translator/DeeplProTranslator.php b/src/Plugin/tmgmt/Translator/DeeplProTranslator.php
+index 51225f7..b44cb69 100755
+--- a/src/Plugin/tmgmt/Translator/DeeplProTranslator.php
++++ b/src/Plugin/tmgmt/Translator/DeeplProTranslator.php
+@@ -20,13 +20,13 @@ class DeeplProTranslator extends DeeplTranslator {
+    *
+    * @var string
+    */
+-  protected string $translatorUrl = 'https://api.deepl.com/v2/translate';
++  protected $translatorUrl = 'https://api.deepl.com/v2/translate';
+ 
+   /**
+    * Translation usage service URL.
+    *
+    * @var string
+    */
+-  protected string $translatorUsageUrl = 'https://api.deepl.com/v2/usage';
++  protected $translatorUsageUrl = 'https://api.deepl.com/v2/usage';
+ 
+ }
+diff --git a/src/Plugin/tmgmt/Translator/DeeplTranslator.php b/src/Plugin/tmgmt/Translator/DeeplTranslator.php
+index 6e620ab..55d649d 100755
+--- a/src/Plugin/tmgmt/Translator/DeeplTranslator.php
++++ b/src/Plugin/tmgmt/Translator/DeeplTranslator.php
+@@ -34,28 +34,28 @@ abstract class DeeplTranslator extends TranslatorPluginBase implements Container
+    *
+    * @var string
+    */
+-  protected static string $qParamName = 'text';
++  protected static $qParamName = 'text';
+ 
+   /**
+    * Max number of text queries for translation sent in one request.
+    *
+    * @var int
+    */
+-  protected int $qChunkSize = 5;
++  protected $qChunkSize = 5;
+ 
+   /**
+    * Guzzle HTTP client.
+    *
+    * @var \GuzzleHttp\ClientInterface
+    */
+-  protected ClientInterface $client;
++  protected $client;
+ 
+   /**
+    * TMGMT data service.
+    *
+    * @var \Drupal\tmgmt\Data
+    */
+-  protected Data $tmgmtData;
++  protected $tmgmtData;
+ 
+   /**
+    * Constructs a DeeplProTranslator object.

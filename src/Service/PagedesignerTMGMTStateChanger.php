@@ -1,8 +1,7 @@
 <?php
 
-namespace Drupal\pagedesigner_content\Service;
+namespace Drupal\pagedesigner_tmgmt\Service;
 
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\pagedesigner\ElementEvents;
 use Drupal\pagedesigner\Entity\Element;
 use Drupal\pagedesigner\Event\ElementEvent;
@@ -15,7 +14,17 @@ use Drupal\pagedesigner_tmgmt\Controller\PagedesignerTranslationController;
 class PagedesignerTMGMTStateChanger extends StateChanger {
 
   /**
-   * {@inheritDoc}
+   * Prepares a batch process to insert structure and data.
+   *
+   * @param \Drupal\pagedesigner\Entity\Element $sourceContainer
+   *   The source container.
+   * @param \Drupal\pagedesigner\Entity\Element $targetContainer
+   *   The target container.
+   * @param bool $clear
+   *   Whether to clear the target before inserting the translation.
+   *
+   * @return array
+   *   A batch definition to execute the copy.
    */
   public function copyContainer(Element $sourceContainer, Element $targetContainer, $clear = FALSE) {
     if ($sourceContainer == NULL) {
@@ -41,16 +50,13 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
         if ($item->entity != NULL) {
           $arg_array = [$item->entity, $clear];
           $operations[] = [
-            '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::deleteEntityBatch',
+            [PagedesignerTMGMTStateChanger::class, 'deleteEntityBatch'],
             $arg_array,
           ];
           if ($targetContainer->children) {
             $targetContainer->children->setValue([]);
           }
           $targetContainer->save();
-
-          /*$this->getHandler()->delete($item->entity, $clear);
-          \Drupal::entityTypeManager()->getStorage('pagedesigner_element')->resetCache();*/
         }
       }
     }
@@ -63,7 +69,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       if ($j == 50) {
         $arg_array2 = [$fifty_array, $targetContainer, &$structureCopy];
         $operations[] = [
-          '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyFromDataBatch',
+          [PagedesignerTMGMTStateChanger::class, 'copyFromDataBatch'],
           $arg_array2,
         ];
         $j = 0;
@@ -73,7 +79,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     if ($j > 0) {
       $arg_array2 = [$fifty_array, $targetContainer, &$structureCopy];
       $operations[] = [
-        '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyFromDataBatch',
+        [PagedesignerTMGMTStateChanger::class, 'copyFromDataBatch'],
         $arg_array2,
       ];
       $j = 0;
@@ -86,7 +92,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
       if ($j == 50) {
         $arg_array2 = [$fifty_array, $targetContainer];
         $operations[] = [
-          '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyReferenceDataBatch',
+          [PagedesignerTMGMTStateChanger::class, 'copyReferenceDataBatch'],
           $arg_array2,
         ];
         $j = 0;
@@ -96,13 +102,13 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     if ($j > 0) {
       $arg_array2 = [$fifty_array, $targetContainer];
       $operations[] = [
-        '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::copyReferenceDataBatch',
+        [PagedesignerTMGMTStateChanger::class, 'copyReferenceDataBatch'],
         $arg_array2,
       ];
     }
 
     $operations[] = [
-      '\Drupal\pagedesigner_content\Service\PagedesignerTMGMTStateChanger::beforeBatchFinished',
+      [PagedesignerTMGMTStateChanger::class, 'beforeBatchFinished'],
       [$targetContainer],
     ];
     $batch['operations'] = $operations;
@@ -111,17 +117,17 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * Copy Reference Data.
+   * Copy the provided data into an element.
    *
    * @param \Drupal\pagedesigner\Entity\Element $entity
    *   The entity to copy.
    * @param \Drupal\pagedesigner\Entity\Element $container
    *   The container its belong to.
-   * @param mixed $data
+   * @param $data
    *   The data to copy.
    *
    * @return \Drupal\pagedesigner\Entity\Element|void
-   *   The entity to copy or nothing.
+   *   The entity to copy or NULL.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
@@ -129,17 +135,18 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
    */
   public static function copyReferenceData(Element $entity, Element $container, $data) {
     if ($entity->id() == $container->id() || !isset($data['parent'])) {
-      return;
+      return NULL;
     }
     $parent = Element::load($data['parent']);
+
+    // There should be only translations on containers.
     if ($parent->hasTranslation($data['langcode'])) {
       $parent = $parent->getTranslation($data['langcode']);
     }
+
     $entity->parent->entity = $parent;
     $entity->langcode->value = $data['langcode'];
-    $entity->entity->entity = \Drupal::entityTypeManager()
-      ->getStorage('node')
-      ->load($data['entity']);
+    $entity->entity->target_id = $data['entity'];
     $entity->save();
     if ($data['reference_field']) {
       if ($parent->hasField($data['reference_field'])) {
@@ -196,7 +203,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * Copy Container Structure.
+   *
    */
   public function copyContainerStructure(Element $sourceContainer, Element $targetContainer) {
     $structure = [];
@@ -243,20 +250,18 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * Delete Entity Batch.
-   *
    * Batch function to remove any previous referenced pagedesigner elements
-   * from the container that is being translated.
+   *  from the container that is being translated.
    *
-   * @param \Drupal\Core\Entity\EntityInterface $entity
+   * @param $entity
    *   The pagedesigner element that is being deleted.
-   * @param bool $clear
+   * @param $clear
    *   Flag to indicate whether the element should be deleted or not.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public static function deleteEntityBatch(EntityInterface $entity, bool $clear) {
+  public static function deleteEntityBatch($entity, $clear) {
     \Drupal::service('pagedesigner.service.element_handler')
       ->delete($entity, $clear);
     \Drupal::entityTypeManager()
@@ -265,18 +270,18 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * Copy From Data Batch.
-   *
-   * @param array $fifty_array
+   * @param $fifty_array
    *   The array of pagedesigner elements.
-   * @param \Drupal\pagedesigner\Entity\Element $targetContainer
+   * @param $targetContainer
    *   The target container to which the elements need to be copied.
-   * @param array $structureCopy
+   * @param $item
+   *   The item that needs to be copied.
+   * @param $structureCopy
    *   The array with the data to copy from.
-   * @param array $context
+   * @param $context
    *   Batch processing context.
    */
-  public static function copyFromDataBatch(array $fifty_array, Element $targetContainer, array &$structureCopy, array &$context) {
+  public static function copyFromDataBatch($fifty_array, $targetContainer, &$structureCopy, &$context) {
     foreach ($fifty_array as $key => $item) {
       if (!isset($context['results']['structure'])) {
         $context['results']['structure'] = $structureCopy;
@@ -295,18 +300,18 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   /**
    * Batch function to copy and re-reference the elements from the container.
    *
-   * @param array $fifty_array
-   *   The array of pagedesigner elements.
-   * @param \Drupal\pagedesigner\Entity\Element $targetContainer
+   * @param $fifty_array
+   *   The id of the pagedesigner element.
+   * @param $targetContainer
    *   The target container to which the elements need to be copied.
-   * @param array $context
+   * @param object $context
    *   Batch processing context.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  public static function copyReferenceDataBatch(array $fifty_array, Element $targetContainer, array &$context) {
+  public static function copyReferenceDataBatch($fifty_array, $targetContainer, &$context) {
     foreach ($fifty_array as $key => $item) {
       $key = $context['results']['structure']['originals'][$key];
       $item = $context['results']['structure'][$key];
@@ -328,12 +333,12 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   /**
    * Batch function to save the last entity id.
    *
-   * @param \Drupal\pagedesigner\Entity\Element $targetContainer
+   * @param $targetContainer
    *   The container that is being translated.
-   * @param array $context
+   * @param $context
    *   Batch processing context.
    */
-  public static function beforeBatchFinished(Element $targetContainer, array &$context) {
+  public static function beforeBatchFinished($targetContainer, &$context) {
     $context['results']['job_entity_id'] = $targetContainer->entity->target_id;
   }
 

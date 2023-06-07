@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\pagedesigner_content;
+namespace Drupal\pagedesigner_tmgmt;
 
 use Drupal\pagedesigner\Entity\Element;
 use Drupal\Core\Field\FieldItemListInterface;
@@ -12,16 +12,16 @@ use Drupal\tmgmt_content\DefaultFieldProcessor;
 class PagedesignerItemProcessor extends DefaultFieldProcessor {
 
   /**
-   * The Source Language.
+   * The source language.
    *
-   * @var mixed
+   * @var string
    */
   public static $sourceLanguage = NULL;
 
   /**
    * The translation data.
    *
-   * @var mixed
+   * @var array
    */
   public static $translationData = NULL;
 
@@ -30,7 +30,6 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
    */
   public function extractTranslatableData(FieldItemListInterface $field) {
 
-    $data = [];
     $language = $field[0]->getParent()->getEntity()->language()->getId();
 
     self::$sourceLanguage = $language;
@@ -62,7 +61,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
       // Get any titles attributes and add them to the list for translation.
       $titleMatches = [];
       preg_match_all('/title="(.*?)"/', $value, $titleMatches);
-      if (count($titleMatches) > 0 && (is_countable($titleMatches[1]) ? count($titleMatches[1]) : 0) > 0) {
+      if (count($titleMatches) > 0 && count($titleMatches[1]) > 0) {
         foreach ($titleMatches[1] as $titleMatch) {
           $key_title = strtolower($titleMatch);
           $key_title = preg_replace('/[^a-z0-9_]+/', '_', $key_title);
@@ -108,17 +107,15 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
       }
       $targetContainer = $container->getTranslation($language);
       if ($sourceContainer != NULL && $targetContainer != NULL) {
-        $batch = \Drupal::service('pagedesigner_content.state_changer')
+        $batch = \Drupal::service('pagedesigner_tmgmt.state_changer')
           ->copyContainer($sourceContainer, $targetContainer, TRUE);
         $store = \Drupal::service('tempstore.shared')
           ->get('pagedesigner.tmgmt_data');
         if (!$store->get('deepl_translator_auto_accept')) {
           batch_set($batch);
         }
-
         return $batch;
       }
-      return;
     }
   }
 

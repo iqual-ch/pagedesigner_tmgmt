@@ -21,11 +21,11 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface {
 
   /**
-   * Translation data.
+   * The translation data.
    *
-   * @var mixed
+   * @var array
    */
-  public $translation_data = NULL;
+  public $translationData = NULL;
 
   /**
    * The entity type manager.
@@ -103,15 +103,19 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
    *   Pagedesigner copy event.
    */
   public function pagedesignerItemCopy(ElementEvent $event) {
+    $container = $event->getData()[1];
+    if (empty($container)) {
+      return;
+    }
     $clone = $event->getData()[2];
     $entity = $event->getData()[0];
     $container = $event->getData()[1];
     $store = $this->tempstore->get('pagedesigner.tmgmt_data');
-    $this->translation_data = $store->get($container->id());
+    $this->translationData = $store->get($container->id());
 
     // Check for translation data.
-    if (isset($this->translation_data['pagedesigner_item'][$entity->id()])) {
-      $itemData = $this->translation_data['pagedesigner_item'][$entity->id()];
+    if (isset($this->translationData['pagedesigner_item'][$entity->id()])) {
+      $itemData = $this->translationData['pagedesigner_item'][$entity->id()];
       if ($itemData['#translate'] && isset($itemData['#translation']) && isset($itemData['#translation']["#text"])) {
 
         $translatedText = $itemData['#translation']["#text"];

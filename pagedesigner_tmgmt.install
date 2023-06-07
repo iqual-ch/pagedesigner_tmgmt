@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Remove obsolete dependencies.
+ */
+function pagedesigner_tmgmt_update_9001() {
+  $module_handler = \Drupal::moduleHandler();
+  if ($module_handler->moduleExists('pagedesigner_content')) {
+    \Drupal::service('module_installer')->uninstall(['pagedesigner_content']);
+  }
+  if ($module_handler->moduleExists('hook_post_action')) {
+    \Drupal::service('module_installer')->uninstall(['hook_post_action'], FALSE);
+  }
+}

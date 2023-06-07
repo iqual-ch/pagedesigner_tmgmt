@@ -7,3 +7,6 @@ services:
     arguments: ['@tempstore.shared', '@pagedesigner.service.element_handler', '@path_alias.manager', '@messenger']
     tags:
       - { name: 'event_subscriber' }
+  pagedesigner_tmgmt.state_changer:
+    class: '\Drupal\pagedesigner_tmgmt\Service\PagedesignerTMGMTStateChanger'
+    arguments: ['@language_manager', '@pagedesigner.service.element_handler']

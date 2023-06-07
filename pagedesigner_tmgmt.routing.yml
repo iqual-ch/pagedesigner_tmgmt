@@ -1,15 +1,7 @@
-pagedesigner_tmgmt.accept_translation:
-  path: '/accept/translation'
+pagedesigner_tmgmt.settings:
+  path: '/admin/config/pagedesigner/tmgmt'
   defaults:
-    _form: '\Drupal\pagedesigner_tmgmt\Form\AcceptForm'
-    _title: 'Accept translations'
+    _title: "Pagedesigner Settings"
+    _form: '\Drupal\pagedesigner_tmgmt\Form\PagedesignerTmgmtSettingsForm'
   requirements:
-    _role: 'authenticated'
-
-pagedesigner_tmgmt.auto_translation:
-  path: '/accept/translation/{job_item}'
-  defaults:
-    _controller: '\Drupal\pagedesigner_tmgmt\Controller\PagedesignerTranslationController::formatDisplay'
-    _title: 'Auto translation'
-  requirements:
-    _role: 'authenticated'
+    _permission: "administer pagedesigner settings"
