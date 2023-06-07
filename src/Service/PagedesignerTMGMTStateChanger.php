@@ -2,6 +2,7 @@
 
 namespace Drupal\pagedesigner_tmgmt\Service;
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\pagedesigner\ElementEvents;
 use Drupal\pagedesigner\Entity\Element;
 use Drupal\pagedesigner\Event\ElementEvent;
@@ -123,7 +124,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
    *   The entity to copy.
    * @param \Drupal\pagedesigner\Entity\Element $container
    *   The container its belong to.
-   * @param $data
+   * @param mixed $data
    *   The data to copy.
    *
    * @return \Drupal\pagedesigner\Entity\Element|void
@@ -203,7 +204,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   *
+   * Copy Container Structure.
    */
   public function copyContainerStructure(Element $sourceContainer, Element $targetContainer) {
     $structure = [];
@@ -250,18 +251,20 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * Batch function to remove any previous referenced pagedesigner elements
-   *  from the container that is being translated.
+   * Delete Entity Batch.
    *
-   * @param $entity
+   * Batch function to remove any previous referenced pagedesigner elements
+   * from the container that is being translated.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The pagedesigner element that is being deleted.
-   * @param $clear
+   * @param bool $clear
    *   Flag to indicate whether the element should be deleted or not.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public static function deleteEntityBatch($entity, $clear) {
+  public static function deleteEntityBatch(EntityInterface $entity, bool $clear) {
     \Drupal::service('pagedesigner.service.element_handler')
       ->delete($entity, $clear);
     \Drupal::entityTypeManager()
@@ -270,18 +273,18 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   }
 
   /**
-   * @param $fifty_array
+   * Copy From Data Batch.
+   *
+   * @param array $fifty_array
    *   The array of pagedesigner elements.
-   * @param $targetContainer
+   * @param \Drupal\pagedesigner\Entity\Element $targetContainer
    *   The target container to which the elements need to be copied.
-   * @param $item
-   *   The item that needs to be copied.
-   * @param $structureCopy
+   * @param array $structureCopy
    *   The array with the data to copy from.
-   * @param $context
+   * @param array $context
    *   Batch processing context.
    */
-  public static function copyFromDataBatch($fifty_array, $targetContainer, &$structureCopy, &$context) {
+  public static function copyFromDataBatch(array $fifty_array, Element $targetContainer, array &$structureCopy, array &$context) {
     foreach ($fifty_array as $key => $item) {
       if (!isset($context['results']['structure'])) {
         $context['results']['structure'] = $structureCopy;
@@ -300,18 +303,18 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   /**
    * Batch function to copy and re-reference the elements from the container.
    *
-   * @param $fifty_array
-   *   The id of the pagedesigner element.
-   * @param $targetContainer
+   * @param array $fifty_array
+   *   The array of pagedesigner elements.
+   * @param \Drupal\pagedesigner\Entity\Element $targetContainer
    *   The target container to which the elements need to be copied.
-   * @param object $context
+   * @param array $context
    *   Batch processing context.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
-  public static function copyReferenceDataBatch($fifty_array, $targetContainer, &$context) {
+  public static function copyReferenceDataBatch(array $fifty_array, Element $targetContainer, array &$context) {
     foreach ($fifty_array as $key => $item) {
       $key = $context['results']['structure']['originals'][$key];
       $item = $context['results']['structure'][$key];
@@ -333,12 +336,12 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
   /**
    * Batch function to save the last entity id.
    *
-   * @param $targetContainer
+   * @param \Drupal\pagedesigner\Entity\Element $targetContainer
    *   The container that is being translated.
-   * @param $context
+   * @param array $context
    *   Batch processing context.
    */
-  public static function beforeBatchFinished($targetContainer, &$context) {
+  public static function beforeBatchFinished(Element $targetContainer, array &$context) {
     $context['results']['job_entity_id'] = $targetContainer->entity->target_id;
   }
 

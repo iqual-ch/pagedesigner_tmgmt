@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * The Pagedesigner TMGMT module's .module file.
  */
 
 use Drupal\pagedesigner_tmgmt\PagedesignerItemProcessor;
