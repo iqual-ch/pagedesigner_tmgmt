@@ -149,7 +149,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     $entity->langcode->value = $data['langcode'];
     $entity->entity->target_id = $data['entity'];
     $entity->save();
-    if ($data['reference_field']) {
+    if (isset($data['reference_field'])) {
       if ($parent->hasField($data['reference_field'])) {
         $parent->get($data['reference_field'])->appendItem($entity);
       }
@@ -194,7 +194,7 @@ class PagedesignerTMGMTStateChanger extends StateChanger {
     $structure[$clone->id()]['original'] = $entity->id();
     // Adjust referencing items.
     foreach ($structure as $key => $item) {
-      if ($item['parent'] == $entity->id()) {
+      if (isset($item['parent']) && $item['parent'] == $entity->id()) {
         $structure[$key]['parent'] = $clone->id();
       }
     }
