@@ -30,6 +30,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
    */
   public function extractTranslatableData(FieldItemListInterface $field) {
 
+    $data = [];
     $language = $field[0]->getParent()->getEntity()->language()->getId();
 
     self::$sourceLanguage = $language;
@@ -61,7 +62,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
       // Get any titles attributes and add them to the list for translation.
       $titleMatches = [];
       preg_match_all('/title="(.*?)"/', $value, $titleMatches);
-      if (count($titleMatches) > 0 && count($titleMatches[1]) > 0) {
+      if (count($titleMatches) > 0 && (is_countable($titleMatches[1]) ? count($titleMatches[1]) : 0) > 0) {
         foreach ($titleMatches[1] as $titleMatch) {
           $key_title = strtolower($titleMatch);
           $key_title = preg_replace('/[^a-z0-9_]+/', '_', $key_title);
