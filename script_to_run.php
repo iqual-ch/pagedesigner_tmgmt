@@ -2,12 +2,22 @@
 
 /**
  * @file
+ * Script to run.
  */
 
 use Drupal\pagedesigner\Entity\Element;
 
 $store = \Drupal::service('user.shared_tempstore')->get('pagedesigner.tmgmt_data');
-$store->set(70760, ['pagedesigner_item' => ['70764' => ['#translate' => TRUE, '#translation' => ['#text' => 'Now we are testing.']]]]);
+$store->set(70760, [
+  'pagedesigner_item' => [
+    '70764' => [
+      '#translate' => TRUE,
+      '#translation' => [
+        '#text' => 'Now we are testing.',
+      ],
+    ],
+  ],
+]);
 $container = Element::load(70760);
 if (!$container->hasTranslation('en')) {
   $targetContainer = $container->addTranslation('en');
