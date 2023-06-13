@@ -109,7 +109,6 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
     }
     $clone = $event->getData()[2];
     $entity = $event->getData()[0];
-    $container = $event->getData()[1];
     $store = $this->tempstore->get('pagedesigner.tmgmt_data');
     $this->translationData = $store->get($container->id());
 
@@ -123,7 +122,7 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
         preg_match_all('/title="(.*?)"/', $translatedText, $titleMatches);
 
         // Replace title attributes with translation.
-        if (count($titleMatches) > 0 && (is_countable($titleMatches[1]) ? count($titleMatches[1]) : 0) > 0) {
+        if (count($titleMatches) > 0 && count($titleMatches[1]) > 0) {
           foreach ($titleMatches[1] as $titleMatch) {
             $key_title = strtolower($titleMatch);
             $key_title = preg_replace('/[^a-z0-9_]+/', '_', $key_title);
