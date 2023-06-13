@@ -30,6 +30,7 @@ class PagedesignerItemProcessor extends DefaultFieldProcessor {
    */
   public function extractTranslatableData(FieldItemListInterface $field) {
 
+    $data = [];
     $language = $field[0]->getParent()->getEntity()->language()->getId();
 
     self::$sourceLanguage = $language;

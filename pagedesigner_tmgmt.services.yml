@@ -4,6 +4,7 @@ services:
     # Event subscriber class that will listen for the events.
     class: '\Drupal\pagedesigner_tmgmt\EventSubscriber\PagedesignerTranslateEventsSubscriber'
     # Tagged as an event_subscriber to register this subscriber with the event_dispatch service.
+    arguments: ['@entity_type.manager', '@tempstore.shared', '@pagedesigner.service.element_handler', '@path_alias.manager', '@messenger']
     tags:
       - { name: 'event_subscriber' }
   pagedesigner_tmgmt.state_changer:

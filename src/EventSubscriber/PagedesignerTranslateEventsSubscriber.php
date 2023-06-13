@@ -2,9 +2,14 @@
 
 namespace Drupal\pagedesigner_tmgmt\EventSubscriber;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\TempStore\SharedTempStoreFactory;
 use Drupal\Core\Url;
 use Drupal\pagedesigner\ElementEvents;
 use Drupal\pagedesigner\Event\ElementEvent;
+use Drupal\pagedesigner\Service\ElementHandler;
+use Drupal\path_alias\AliasManagerInterface;
 use Drupal\redirect\Entity\Redirect;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -21,6 +26,63 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
    * @var array
    */
   public $translationData = NULL;
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * Tempstore Factory.
+   *
+   * @var \Drupal\Core\TempStore\SharedTempStoreFactory
+   */
+  protected $tempstore;
+
+  /**
+   * The element handler.
+   *
+   * @var \Drupal\pagedesigner\Service\ElementHandler
+   */
+  protected $elementHandler = NULL;
+
+  /**
+   * The path alias manager.
+   *
+   * @var \Drupal\path_alias\AliasManagerInterface
+   */
+  protected $aliasManager;
+
+  /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
+
+  /**
+   * Constructs a new PagedesignerTranslateEventsSubscriber object.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   * @param \Drupal\Core\TempStore\SharedTempStoreFactory $tempstore
+   *   The tempstore factory.
+   * @param \Drupal\pagedesigner\Entity\ElementHandler $element_handler
+   *   The element handler.
+   * @param \Drupal\path_alias\AliasManagerInterface $alias_manager
+   *   The path alias manager.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger service.
+   */
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, SharedTempStoreFactory $tempstore, ElementHandler $element_handler, AliasManagerInterface $alias_manager, MessengerInterface $messenger) {
+    $this->entityTypeManager = $entity_type_manager;
+    $this->tempstore = $tempstore;
+    $this->elementHandler = $element_handler;
+    $this->aliasManager = $alias_manager;
+    $this->messenger = $messenger;
+  }
 
   /**
    * {@inheritdoc}
@@ -47,8 +109,7 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
     }
     $clone = $event->getData()[2];
     $entity = $event->getData()[0];
-    $handler = \Drupal::service('pagedesigner.service.element_handler');
-    $store = \Drupal::service('tempstore.shared')->get('pagedesigner.tmgmt_data');
+    $store = $this->tempstore->get('pagedesigner.tmgmt_data');
     $this->translationData = $store->get($container->id());
 
     // Check for translation data.
@@ -83,7 +144,7 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
           foreach ($hrefMatches[1] as $key => $hrefMatch) {
             // Get node id from the link and replace it with the current
             // language accordingly.
-            $alias = \Drupal::service('path.alias_manager')->getPathByAlias($hrefMatch);
+            $alias = $this->aliasManager->getPathByAlias($hrefMatch);
 
             try {
               // Check the redirect records.
@@ -111,7 +172,7 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
                 $params = Url::fromUri($alias)->getRouteParameters();
                 $entity_type = key($params);
                 if (isset($entity_type) && strlen($entity_type) > 0) {
-                  $node = \Drupal::entityTypeManager()->getStorage($entity_type)->load($params[$entity_type]);
+                  $node = $this->entityTypeManager->getStorage($entity_type)->load($params[$entity_type]);
                   $id = $node->id();
                   $lang = $container->language()->getId();
                   $translatedText = str_replace($hrefMatches[0][$key], 'href="/' . $lang . '/node/' . $id . '"', $translatedText);
@@ -119,13 +180,13 @@ class PagedesignerTranslateEventsSubscriber implements EventSubscriberInterface 
               }
             }
             catch (\Exception $e) {
-              \Drupal::messenger()->addMessage($alias);
+              $this->messenger->addMessage($alias);
             }
           }
         }
 
         // Update the content of the element.
-        $handler->patch($clone, [$translatedText]);
+        $this->elementHandler->patch($clone, [$translatedText]);
       }
     }
 

@@ -1,9 +1,0 @@
-name: Pagedesigner content
-description: Content entity source plugin of Pagedesigner for the Translation Management system.
-package: pagedesigner_tmgmt
-core_version_requirement: ^8.8 || ^9
-type: module
-
-dependencies:
-  - pagedesigner_tmgmt:pagedesigner_tmgmt
-  - hook_post_action:hook_post_action
