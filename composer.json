@@ -1,7 +1,7 @@
 {
-  "name": "iqual/pagedesigner_tmgmt",
-  "description": "Integrate pagedesigner with deepl",
-  "type": "drupal-custom-module",
+  "name": "drupal/pagedesigner_tmgmt",
+  "description": "Integrate Pagedesigner with DeepL",
+  "type": "drupal-module",
   "keywords": [
     "Drupal",
     "Editing"
